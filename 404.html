@@ -53,7 +53,26 @@ h1,h2,h3{ font-family:'Fraunces',serif; font-weight:600; margin:0; }
 .qcard .name{ font-size:14px; font-weight:600; margin-bottom:2px; }
 .qcard .total{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft); }
 .qcard .reason{ font-size:11px; color:var(--bad); margin-top:6px; font-style:italic; }
+.qcard.is-hidden{ opacity:.5; }
+.hide-btn{
+  font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase;
+  background:none; border:1px solid var(--line); color:var(--ink-soft); padding:2px 7px; border-radius:10px; cursor:pointer;
+}
+.hide-btn:hover{ border-color:var(--brass); color:var(--brass); }
 .empty-list{ font-size:12.5px; color:var(--ink-soft); text-align:center; padding:24px 8px; }
+
+.list-filters{ margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--line); }
+.date-filter{ display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+.date-filter input{
+  flex:1; min-width:0; padding:6px 7px; border:1px solid var(--line); border-radius:4px; font-size:11.5px;
+  font-family:'IBM Plex Mono',monospace; background:#fff; color:var(--ink);
+}
+.date-filter .to-sep{ font-size:11px; color:var(--ink-soft); }
+.hidden-toggle{
+  display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--ink-soft); cursor:pointer;
+  font-family:'IBM Plex Mono',monospace;
+}
+.hidden-toggle input{ cursor:pointer; }
 
 .editor-pane{ flex:1; padding:28px 36px; overflow-y:auto; }
 .editor-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:22px; }
@@ -102,11 +121,6 @@ h1,h2,h3{ font-family:'Fraunces',serif; font-weight:600; margin:0; }
 .stage-label{ color:var(--brass); font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.22em; text-transform:uppercase; opacity:.85; }
 .book-wrap{ position:relative; width:100%; aspect-ratio:1000/1400; perspective:2600px; }
 .spine-shadow{ position:absolute; inset:0; border-radius:6px; box-shadow:0 30px 60px -20px rgba(0,0,0,.65), 0 10px 25px -10px rgba(0,0,0,.5); pointer-events:none; }
-.edge-stack{ position:absolute; top:2.5%; bottom:2.5%; width:16px; z-index:3; pointer-events:none; }
-.edge-stack.left{ left:-9px; }
-.edge-stack.right{ right:-9px; }
-.edge-stack .sheet{ position:absolute; inset:0; border-radius:0 3px 3px 0; background:linear-gradient(90deg, var(--paper), var(--linen)); box-shadow:inset 0 0 0 1px rgba(60,44,34,.14); }
-.edge-stack.right .sheet{ border-radius:3px 0 0 3px; }
 .book{ position:relative; width:100%; height:100%; transform-style:preserve-3d; }
 .leaf{ position:absolute; top:0; left:0; width:100%; height:100%; transform-style:preserve-3d; transform-origin:left center; transition:transform 800ms cubic-bezier(.61,.03,.42,1); transform:rotateY(0deg); }
 .leaf.flipped{ transform:rotateY(-178deg); }
@@ -118,13 +132,9 @@ h1,h2,h3{ font-family:'Fraunces',serif; font-weight:600; margin:0; }
 .page::before{ content:""; position:absolute; top:0; left:0; bottom:0; width:18px; background:linear-gradient(to right, rgba(36,26,20,.16), transparent); z-index:1; }
 .page.img-page{ padding:0; overflow:hidden; }
 .page-bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
-.cover-fields{ position:absolute; left:55%; width:42%; text-align:center; display:flex; flex-direction:column; gap:.5em; color:#f3ede1; font-family:'IBM Plex Mono',monospace; z-index:2; }
+.cover-fields{ position:absolute; left:56%; width:32%; top:83%; text-align:right; display:flex; flex-direction:column; gap:.4em; color:#f3ede1; font-family:'IBM Plex Mono',monospace; z-index:2; }
 .cover-fields .cf-name{ font-size:1.15em; letter-spacing:.02em; }
 .cover-fields .cf-ref, .cover-fields .cf-date{ font-size:.85em; color:#d8c8ae; }
-.tabs{ position:absolute; right:-2px; top:24px; display:flex; flex-direction:column; gap:7px; z-index:50; }
-.tab{ font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--linen); background:var(--walnut); border:1px solid rgba(0,0,0,.25); padding:8px 5px 8px 9px; writing-mode:vertical-rl; transform:rotate(180deg); cursor:pointer; border-radius:0 4px 4px 0; }
-.tab:hover{ background:var(--oak); }
-.tab.active{ background:var(--brass); color:#241a14; padding-right:13px; }
 .cover{ background:radial-gradient(120% 90% at 15% 0%, #4d3826 0%, transparent 55%), linear-gradient(155deg, var(--walnut), var(--bark) 70%); color:var(--linen); justify-content:space-between; padding-left:56px; }
 .cover .mark{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.3em; color:var(--brass); text-transform:uppercase; }
 .cover h1{ font-family:'Fraunces',serif; font-weight:600; font-size:clamp(34px,5.5vw,52px); line-height:1.02; margin:16px 0 0; }
@@ -221,6 +231,14 @@ td.num, th.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
     </div>
     <div class="list-pane">
       <button class="new-btn" id="newQuoteBtn">+ New Quote</button>
+      <div class="list-filters">
+        <div class="date-filter">
+          <input type="date" id="filterFrom" title="From date">
+          <span class="to-sep">to</span>
+          <input type="date" id="filterTo" title="To date">
+        </div>
+        <label class="hidden-toggle"><input type="checkbox" id="showHiddenChk"> Show hidden</label>
+      </div>
       <div id="qList"></div>
     </div>
     <div class="editor-pane" id="editorPane"></div>
@@ -250,6 +268,8 @@ function toDbRow(q){
     gallery: q.gallery || [],
     status: q.status || 'draft',
     response: q.response || null,
+    hidden: !!q.hidden,
+    short_slug: q.shortSlug || null,
     updated_at: new Date().toISOString()
   };
 }
@@ -264,6 +284,8 @@ function fromDbRow(r){
     gallery: (r.gallery && r.gallery.length) ? r.gallery : [{name:'',ref:'',tex:'t1'}],
     status: r.status || 'draft',
     response: r.response || null,
+    hidden: !!r.hidden,
+    shortSlug: r.short_slug || null,
     createdAt: r.created_at,
     updatedAt: r.updated_at
   };
@@ -272,6 +294,14 @@ function fromDbRow(r){
 async function getQuote(ref){
   try{
     const res = await fetch(`${SUPABASE_URL}/rest/v1/quotes?ref=eq.${encodeURIComponent(ref)}&select=*`, { headers: SB_HEADERS });
+    if(!res.ok) return null;
+    const rows = await res.json();
+    return rows[0] ? fromDbRow(rows[0]) : null;
+  }catch(e){ return null; }
+}
+async function getQuoteBySlug(slug){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/quotes?short_slug=eq.${encodeURIComponent(slug)}&select=*`, { headers: SB_HEADERS });
     if(!res.ok) return null;
     const rows = await res.json();
     return rows[0] ? fromDbRow(rows[0]) : null;
@@ -300,6 +330,12 @@ async function listQuotes(){
 async function nextRef(){
   return 'DCF-' + Date.now().toString().slice(-6);
 }
+function genSlug(len=6){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  let s = '';
+  for(let i=0;i<len;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
 
 /* ---------------- defaults ---------------- */
 function blankQuote(ref){
@@ -309,7 +345,8 @@ function blankQuote(ref){
     lineItems: [{product:'', qty:'', unitPrice:''}],
     notes:'Price valid for 14 days. 25% deposit required to confirm your fitting date.',
     gallery: [{name:'', ref:'', tex:'t1'}],
-    status:'draft', response:null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+    status:'draft', response:null, hidden:false, shortSlug: genSlug(),
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
   };
 }
 function money(n){ return '£' + (isNaN(n)?0:n).toFixed(2); }
@@ -325,19 +362,31 @@ function calcTotals(q){
 /* ---------------- ADMIN render ---------------- */
 let currentRef = null;
 let draft = null;
+let filterFrom = '';
+let filterTo = '';
+let showHidden = false;
 
 async function renderList(){
-  const quotes = await listQuotes();
+  let quotes = await listQuotes();
+  if(!showHidden) quotes = quotes.filter(q=> !q.hidden);
+  if(filterFrom) quotes = quotes.filter(q=> q.date && q.date >= filterFrom);
+  if(filterTo) quotes = quotes.filter(q=> q.date && q.date <= filterTo);
   const el = document.getElementById('qList');
-  if(!quotes.length){ el.innerHTML = '<div class="empty-list">No quotes yet — create your first one.</div>'; return; }
+  if(!quotes.length){ el.innerHTML = '<div class="empty-list">No quotes match — create one or adjust your filters.</div>'; return; }
   el.innerHTML = quotes.map(q=>{
     const {total} = calcTotals(q);
     let reasonHtml = '';
     if(q.status==='declined' && q.response && q.response.reason){
       reasonHtml = `<div class="reason">"${escapeHtml(q.response.reason)}"</div>`;
     }
-    return `<div class="qcard ${q.ref===currentRef?'active':''}" data-ref="${q.ref}">
-      <div class="row1"><span class="ref">${q.ref}</span><span class="pill ${q.status}">${q.status}</span></div>
+    return `<div class="qcard ${q.ref===currentRef?'active':''} ${q.hidden?'is-hidden':''}" data-ref="${q.ref}">
+      <div class="row1">
+        <span class="ref">${q.ref}</span>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <span class="pill ${q.status}">${q.status}</span>
+          <button class="hide-btn" data-ref="${q.ref}" data-hidden="${q.hidden?1:0}">${q.hidden?'Unhide':'Hide'}</button>
+        </div>
+      </div>
       <div class="name">${escapeHtml(q.customerName)||'Unnamed customer'}</div>
       <div class="total">${money(total)}</div>
       ${reasonHtml}
@@ -346,12 +395,26 @@ async function renderList(){
   Array.from(el.querySelectorAll('.qcard')).forEach(c=>{
     c.addEventListener('click', ()=> openEditor(c.dataset.ref));
   });
+  Array.from(el.querySelectorAll('.hide-btn')).forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      const ref = btn.dataset.ref;
+      const wasHidden = btn.dataset.hidden === '1';
+      const q = await getQuote(ref);
+      if(!q) return;
+      q.hidden = !wasHidden;
+      await saveQuote(q);
+      if(draft && draft.ref===ref) draft.hidden = q.hidden;
+      renderList();
+    });
+  });
 }
 
 async function openEditor(ref){
   currentRef = ref;
   draft = await getQuote(ref);
   if(!draft) draft = blankQuote(ref);
+  if(!draft.shortSlug){ draft.shortSlug = genSlug(); await saveQuote(draft); }
   renderEditor();
   renderList();
 }
@@ -415,7 +478,7 @@ function renderEditor(){
       ${draft.status==='draft' ? '' : ''}
     </div>
     <div class="link-box">
-      <input id="linkOut" readonly value="${siteBase()}/quote/${draft.ref}">
+      <input id="linkOut" readonly value="${siteBase()}/q/${draft.shortSlug || ''}">
       <button class="btn btn-ghost" id="copyBtn">Copy link</button>
     </div>
     <div class="link-note">Copy this and send it however you normally do — WhatsApp, text, email. Anyone with the link and quote number can view and respond to this quote. This clean-path link only resolves once the site is deployed with the redirect/404 fallback below — while testing locally, use "Preview as customer" instead.</div>
@@ -483,14 +546,18 @@ document.getElementById('newQuoteBtn').addEventListener('click', async ()=>{
   renderEditor(); renderList();
 });
 
+document.getElementById('filterFrom').addEventListener('change', e=>{ filterFrom = e.target.value; renderList(); });
+document.getElementById('filterTo').addEventListener('change', e=>{ filterTo = e.target.value; renderList(); });
+document.getElementById('showHiddenChk').addEventListener('change', e=>{ showHidden = e.target.checked; renderList(); });
+
 /* ---------------- CUSTOMER render ---------------- */
 const PAGE_TABS = ['Cover','About','Quote','Gallery','Service','Decision'];
 
-async function renderCustomer(ref){
+async function renderCustomer(routeInfo){
   const stage = document.getElementById('custStage');
-  const q = await getQuote(ref);
+  const q = routeInfo.type === 'slug' ? await getQuoteBySlug(routeInfo.value) : await getQuote(routeInfo.value);
   if(!q){
-    stage.innerHTML = `<div class="not-found">Quote <strong>${escapeHtml(ref)}</strong> couldn't be found.<br>Double check the link, or ask DC Flooring to resend it.</div>`;
+    stage.innerHTML = `<div class="not-found">Quote <strong>${escapeHtml(routeInfo.value)}</strong> couldn't be found.<br>Double check the link, or ask DC Flooring to resend it.</div>`;
     return;
   }
   const {subtotal, vat, total} = calcTotals(q);
@@ -508,8 +575,6 @@ async function renderCustomer(ref){
     <div class="stage-label">DC Flooring · Quote ${escapeHtml(q.ref)}</div>
     <div class="book-wrap">
       <div class="spine-shadow"></div>
-      <div class="edge-stack left" id="edgeLeft"></div>
-      <div class="edge-stack right" id="edgeRight"></div>
       <div class="book" id="book">
 
         <div class="leaf" data-leaf="0"><div class="face front"><div class="page img-page">
@@ -551,16 +616,6 @@ async function renderCustomer(ref){
         </div><div class="pageno">06</div></div><div class="face back"></div></div>
 
         <div class="leaf" data-leaf="6"><div class="face front"><div class="page decision" id="decisionPage"></div></div><div class="face back"></div></div>
-
-        <div class="tabs">
-          <div class="tab active" data-goto="0">Cover</div>
-          <div class="tab" data-goto="1">About</div>
-          <div class="tab" data-goto="2">How we work</div>
-          <div class="tab" data-goto="3">Quote</div>
-          <div class="tab" data-goto="4">Gallery</div>
-          <div class="tab" data-goto="5">Service</div>
-          <div class="tab" data-goto="6">Decide</div>
-        </div>
       </div>
     </div>
     <div class="controls">
@@ -620,25 +675,11 @@ async function submitDecision(q, decision, reason){
 
 function wireBook(){
   const leaves = Array.from(document.querySelectorAll('.leaf'));
-  const tabs = Array.from(document.querySelectorAll('.tab'));
   const dotsEl = document.getElementById('dots');
-  const edgeLeft = document.getElementById('edgeLeft');
-  const edgeRight = document.getElementById('edgeRight');
   const total = leaves.length;
   let current = 0;
   dotsEl.innerHTML = leaves.map((_,i)=>`<div class="dot" data-i="${i}"></div>`).join('');
   const dots = Array.from(dotsEl.children);
-
-  function renderEdges(){
-    const leftN = Math.min(current, 6);
-    const rightN = Math.min(total - current, 6);
-    edgeLeft.innerHTML = Array.from({length:leftN}).map((_,i)=>
-      `<div class="sheet" style="transform:translateX(${-(i+1)*2}px) scaleY(${1-i*0.03}); opacity:${1-i*0.13}; z-index:${leftN-i}"></div>`
-    ).join('');
-    edgeRight.innerHTML = Array.from({length:rightN}).map((_,i)=>
-      `<div class="sheet" style="transform:translateX(${(i+1)*2}px) scaleY(${1-i*0.03}); opacity:${1-i*0.13}; z-index:${rightN-i}"></div>`
-    ).join('');
-  }
 
   function render(){
     leaves.forEach((leaf,i)=>{
@@ -647,11 +688,9 @@ function wireBook(){
       leaf.style.zIndex = flipped ? (i+1) : (total - i + 10);
     });
     const activeIdx = Math.min(current, total-1);
-    tabs.forEach((t,i)=> t.classList.toggle('active', i===activeIdx));
     dots.forEach((d,i)=> d.classList.toggle('active', i===activeIdx));
     document.getElementById('prevBtn').disabled = current===0;
     document.getElementById('nextBtn').disabled = current===total;
-    renderEdges();
   }
   function goTo(i){
     const newCurrent = Math.max(0, Math.min(i, total));
@@ -666,32 +705,49 @@ function wireBook(){
   }
   document.getElementById('nextBtn').addEventListener('click', ()=> goTo(current+1));
   document.getElementById('prevBtn').addEventListener('click', ()=> goTo(current-1));
-  tabs.forEach(t=> t.addEventListener('click', ()=> goTo(parseInt(t.dataset.goto,10))));
   dots.forEach(d=> d.addEventListener('click', ()=> goTo(parseInt(d.dataset.i,10))));
   leaves.forEach((leaf,i)=> leaf.addEventListener('click', (e)=>{
-    if(e.target.closest('.tab') || e.target.closest('button') || e.target.closest('textarea')) return;
+    if(e.target.closest('button') || e.target.closest('textarea')) return;
     if(i===current) goTo(current+1); else if(i===current-1) goTo(current-1);
   }));
+
+  const bookWrap = document.querySelector('.book-wrap');
+  let touchStartX = null, touchStartY = null;
+  bookWrap.addEventListener('touchstart', (e)=>{
+    const t = e.changedTouches[0];
+    touchStartX = t.clientX; touchStartY = t.clientY;
+  }, {passive:true});
+  bookWrap.addEventListener('touchend', (e)=>{
+    if(touchStartX===null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX, dy = t.clientY - touchStartY;
+    touchStartX = null; touchStartY = null;
+    if(Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+    if(dx < 0) goTo(current+1); else goTo(current-1);
+  }, {passive:true});
+
   render();
 }
 
 /* ---------------- routing ---------------- */
 function siteBase(){
-  // Strips index.html / trailing quote path so links work whether the site
+  // Strips index.html / trailing quote or short-link path so links work whether the site
   // sits at a domain root (Netlify) or a subfolder like /repo-name/ (GitHub Pages).
-  let base = location.pathname.replace(/\/quote\/[^\/?#]+\/?$/i, '').replace(/\/(index\.html|404\.html)?$/i, '');
+  let base = location.pathname.replace(/\/(quote|q)\/[^\/?#]+\/?$/i, '').replace(/\/(index\.html|404\.html)?$/i, '');
   return location.origin + base;
 }
-function routeRef(){
+function routeMatch(){
   const pathMatch = location.pathname.match(/\/quote\/([^\/?#]+)\/?$/i);
-  if(pathMatch) return decodeURIComponent(pathMatch[1]);
+  if(pathMatch) return { type:'ref', value: decodeURIComponent(pathMatch[1]) };
+  const slugMatch = location.pathname.match(/\/q\/([^\/?#]+)\/?$/i);
+  if(slugMatch) return { type:'slug', value: decodeURIComponent(slugMatch[1]) };
   const hash = location.hash.replace('#','').trim();
-  if(hash && hash.toLowerCase() !== 'admin') return hash;
+  if(hash && hash.toLowerCase() !== 'admin') return { type:'ref', value: hash };
   return null;
 }
 async function route(){
-  const ref = routeRef();
-  const isAdmin = !ref;
+  const match = routeMatch();
+  const isAdmin = !match;
   document.getElementById('admin').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('customer').style.display = isAdmin ? 'none' : 'flex';
   document.getElementById('adminLink').style.display = isAdmin ? 'none' : 'block';
@@ -704,7 +760,7 @@ async function route(){
       renderEditor(); renderList();
     }
   } else {
-    await renderCustomer(ref);
+    await renderCustomer(match);
   }
 }
 window.addEventListener('hashchange', route);
