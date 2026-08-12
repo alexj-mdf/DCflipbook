@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DC Flooring — Quotes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root{
+  --bark:#241a14; --walnut:#3c2c22; --oak:#a97e4f; --brass:#b08d57;
+  --linen:#f3ede1; --paper:#faf6ee; --ink:#2a2019; --ink-soft:#6b5c4d; --line:#d9cbb2;
+  --ok:#4c6b4f; --bad:#a1493f;
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; min-height:100%; background:var(--linen); font-family:'Work Sans',sans-serif; color:var(--ink); }
+button{ font-family:inherit; }
+::selection{ background:var(--brass); color:#fff; }
+
+/* ===== shared bits ===== */
+.eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.22em; text-transform:uppercase; color:var(--oak); margin:0 0 6px; }
+.mono{ font-family:'IBM Plex Mono',monospace; }
+h1,h2,h3{ font-family:'Fraunces',serif; font-weight:600; margin:0; }
+.pill{ display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:3px 9px; border-radius:20px; }
+.pill.draft{ background:#e5dbc7; color:var(--ink-soft); }
+.pill.sent{ background:#e0d3ba; color:var(--walnut); }
+.pill.accepted{ background:#dbe6dc; color:var(--ok); }
+.pill.declined{ background:#f0dcd9; color:var(--bad); }
+
+/* ===== ADMIN ===== */
+#admin{ display:none; min-height:100vh; }
+.topbar{
+  background:var(--walnut); color:var(--linen); padding:16px 28px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.topbar .brand{ font-family:'Fraunces',serif; font-weight:600; font-size:18px; }
+.topbar .brand span{ color:var(--brass); font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.2em; display:block; font-weight:400; }
+.admin-body{ display:flex; max-width:1180px; margin:0 auto; gap:0; min-height:calc(100vh - 62px); }
+.list-pane{ width:340px; border-right:1px solid var(--line); padding:20px; background:var(--paper); }
+.new-btn{
+  width:100%; padding:11px; background:var(--brass); color:#fff; border:none; border-radius:4px;
+  font-size:13px; font-weight:600; letter-spacing:.02em; cursor:pointer; margin-bottom:16px;
+}
+.new-btn:hover{ background:var(--oak); }
+.qcard{
+  border:1px solid var(--line); border-radius:5px; padding:12px 14px; margin-bottom:10px; cursor:pointer;
+  background:#fff; transition:border-color 150ms;
+}
+.qcard:hover{ border-color:var(--brass); }
+.qcard.active{ border-color:var(--brass); box-shadow:0 0 0 1px var(--brass); }
+.qcard .row1{ display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+.qcard .ref{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); }
+.qcard .name{ font-size:14px; font-weight:600; margin-bottom:2px; }
+.qcard .total{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft); }
+.qcard .reason{ font-size:11px; color:var(--bad); margin-top:6px; font-style:italic; }
+.empty-list{ font-size:12.5px; color:var(--ink-soft); text-align:center; padding:24px 8px; }
+
+.editor-pane{ flex:1; padding:28px 36px; overflow-y:auto; }
+.editor-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:22px; }
+.field{ margin-bottom:16px; }
+.field label{ display:block; font-size:11px; font-family:'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px; }
+.field input, .field textarea, .field select{
+  width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:4px; font-size:13.5px;
+  font-family:'Work Sans',sans-serif; background:#fff; color:var(--ink);
+}
+.field textarea{ resize:vertical; min-height:64px; }
+.row2{ display:flex; gap:14px; }
+.row2 .field{ flex:1; }
+
+.section-title{ font-size:13px; font-weight:600; margin:26px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line); font-family:'Fraunces',serif;}
+.li-row{ display:grid; grid-template-columns: 2fr 90px 110px 110px 32px; gap:8px; align-items:center; margin-bottom:8px; }
+.li-row input{ padding:8px 9px; font-size:13px; }
+.li-total{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ink-soft); text-align:right; padding-right:4px; }
+.rm-btn{ background:none; border:none; color:var(--bad); cursor:pointer; font-size:15px; width:28px; }
+.add-row-btn{ font-size:12px; color:var(--brass); background:none; border:1px dashed var(--line); padding:8px; width:100%; border-radius:4px; cursor:pointer; margin-top:4px; }
+.add-row-btn:hover{ border-color:var(--brass); }
+.totals-box{ margin-top:12px; align-self:flex-end; width:240px; margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:13px; }
+.totals-box div{ display:flex; justify-content:space-between; padding:5px 0; color:var(--ink-soft); }
+.totals-box .grand{ color:var(--ink); font-weight:600; border-top:1px solid var(--line); margin-top:4px; padding-top:9px; font-size:15px; }
+
+.gal-row{ display:grid; grid-template-columns:1fr 1fr 1fr 32px; gap:8px; margin-bottom:8px; align-items:center; }
+
+.action-bar{ display:flex; gap:10px; margin-top:26px; align-items:center; flex-wrap:wrap; }
+.btn{ padding:10px 18px; border-radius:4px; font-size:13px; font-weight:600; cursor:pointer; border:1px solid transparent; }
+.btn-primary{ background:var(--brass); color:#fff; }
+.btn-primary:hover{ background:var(--oak); }
+.btn-ghost{ background:none; border-color:var(--line); color:var(--ink); }
+.btn-ghost:hover{ border-color:var(--brass); color:var(--brass); }
+.link-box{ display:flex; gap:8px; align-items:center; margin-top:6px; }
+.link-box input{ flex:1; padding:8px 10px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; border:1px solid var(--line); border-radius:4px; background:var(--paper); }
+.link-note{ font-size:11px; color:var(--ink-soft); margin-top:6px; line-height:1.5; }
+.response-box{ margin-top:22px; padding:14px 16px; border-radius:5px; }
+.response-box.accepted{ background:#eaf1eb; }
+.response-box.declined{ background:#f7ece9; }
+.response-box .rt{ font-size:13px; font-weight:600; margin-bottom:4px; }
+.response-box .rr{ font-size:12.5px; color:var(--ink-soft); }
+.saved-flash{ font-size:12px; color:var(--ok); font-family:'IBM Plex Mono',monospace; opacity:0; transition:opacity 200ms; }
+.saved-flash.show{ opacity:1; }
+
+/* ===== CUSTOMER (booklet) ===== */
+#customer{ display:none; min-height:100vh; align-items:center; justify-content:center; padding:48px 16px;
+  background:radial-gradient(ellipse at 50% -10%, #4a372a 0%, var(--bark) 55%), var(--bark); }
+.stage{ width:100%; max-width:480px; display:flex; flex-direction:column; align-items:center; gap:22px; }
+.stage-label{ color:var(--brass); font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.22em; text-transform:uppercase; opacity:.85; }
+.book-wrap{ position:relative; width:100%; aspect-ratio:1000/1400; perspective:2600px; }
+.spine-shadow{ position:absolute; inset:0; border-radius:6px; box-shadow:0 30px 60px -20px rgba(0,0,0,.65), 0 10px 25px -10px rgba(0,0,0,.5); pointer-events:none; }
+.edge-stack{ position:absolute; top:2.5%; bottom:2.5%; width:16px; z-index:3; pointer-events:none; }
+.edge-stack.left{ left:-9px; }
+.edge-stack.right{ right:-9px; }
+.edge-stack .sheet{ position:absolute; inset:0; border-radius:0 3px 3px 0; background:linear-gradient(90deg, var(--paper), var(--linen)); box-shadow:inset 0 0 0 1px rgba(60,44,34,.14); }
+.edge-stack.right .sheet{ border-radius:3px 0 0 3px; }
+.book{ position:relative; width:100%; height:100%; transform-style:preserve-3d; }
+.leaf{ position:absolute; top:0; left:0; width:100%; height:100%; transform-style:preserve-3d; transform-origin:left center; transition:transform 800ms cubic-bezier(.61,.03,.42,1); transform:rotateY(0deg); }
+.leaf.flipped{ transform:rotateY(-178deg); }
+.leaf.turning::after{ content:""; position:absolute; inset:0; background:linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.32) 48%, rgba(0,0,0,0) 100%); z-index:4; animation:curl-shadow 800ms ease; pointer-events:none; }
+@keyframes curl-shadow{ 0%{ opacity:0; } 45%{ opacity:1; } 100%{ opacity:0; } }
+.face{ position:absolute; top:0; left:0; width:100%; height:100%; backface-visibility:hidden; border-radius:6px; overflow:hidden; background:var(--paper); border:1px solid var(--line); }
+.face.back{ transform:rotateY(180deg); background:var(--linen); }
+.page{ position:relative; height:100%; padding:26px 22px 22px 32px; display:flex; flex-direction:column; overflow-y:auto; }
+.page::before{ content:""; position:absolute; top:0; left:0; bottom:0; width:18px; background:linear-gradient(to right, rgba(36,26,20,.16), transparent); z-index:1; }
+.page.img-page{ padding:0; overflow:hidden; }
+.page-bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+.cover-fields{ position:absolute; left:55%; width:42%; text-align:center; display:flex; flex-direction:column; gap:.5em; color:#f3ede1; font-family:'IBM Plex Mono',monospace; z-index:2; }
+.cover-fields .cf-name{ font-size:1.15em; letter-spacing:.02em; }
+.cover-fields .cf-ref, .cover-fields .cf-date{ font-size:.85em; color:#d8c8ae; }
+.tabs{ position:absolute; right:-2px; top:24px; display:flex; flex-direction:column; gap:7px; z-index:50; }
+.tab{ font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--linen); background:var(--walnut); border:1px solid rgba(0,0,0,.25); padding:8px 5px 8px 9px; writing-mode:vertical-rl; transform:rotate(180deg); cursor:pointer; border-radius:0 4px 4px 0; }
+.tab:hover{ background:var(--oak); }
+.tab.active{ background:var(--brass); color:#241a14; padding-right:13px; }
+.cover{ background:radial-gradient(120% 90% at 15% 0%, #4d3826 0%, transparent 55%), linear-gradient(155deg, var(--walnut), var(--bark) 70%); color:var(--linen); justify-content:space-between; padding-left:56px; }
+.cover .mark{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.3em; color:var(--brass); text-transform:uppercase; }
+.cover h1{ font-family:'Fraunces',serif; font-weight:600; font-size:clamp(34px,5.5vw,52px); line-height:1.02; margin:16px 0 0; }
+.cover .rule{ width:64px; height:2px; background:var(--brass); margin:20px 0; }
+.cover .sub{ font-size:13.5px; color:#d8c8ae; max-width:340px; line-height:1.55; }
+.cover .meta{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:#cbb896; line-height:1.9; }
+.cover .meta b{ color:var(--linen); font-weight:500; }
+h2.title{ font-family:'Fraunces',serif; font-weight:600; font-size:28px; margin:0 0 16px; color:var(--ink); }
+.pageno{ position:absolute; bottom:16px; right:56px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--ink-soft); letter-spacing:.1em; }
+.about p{ font-size:14px; line-height:1.7; color:var(--ink-soft); max-width:60ch; }
+.streams{ display:flex; gap:12px; margin-top:18px; }
+.stream{ flex:1; border:1px solid var(--line); border-radius:4px; padding:12px 13px 14px; background:linear-gradient(180deg,#fff,var(--paper)); }
+.stream .n{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--brass); letter-spacing:.15em; }
+.stream .t{ font-family:'Fraunces',serif; font-weight:600; font-size:15px; margin:4px 0; }
+.stream .d{ font-size:11.5px; color:var(--ink-soft); line-height:1.5; }
+.quotebox{ border:1px solid var(--line); border-radius:4px; overflow:hidden; }
+table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+thead th{ text-align:left; font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); background:var(--linen); padding:8px 11px; border-bottom:1px solid var(--line); }
+tbody td{ padding:9px 11px; border-bottom:1px solid var(--line); color:var(--ink); }
+tbody tr:last-child td{ border-bottom:none; }
+td.num, th.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
+.totals{ margin-top:12px; align-self:flex-end; width:220px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; }
+.totals div{ display:flex; justify-content:space-between; padding:4px 0; color:var(--ink-soft); }
+.totals .grand{ color:var(--ink); font-weight:600; border-top:1px solid var(--line); margin-top:3px; padding-top:8px; font-size:14.5px; }
+.note{ margin-top:14px; font-size:11px; color:var(--ink-soft); font-style:italic; white-space:pre-wrap; }
+.swatches{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:4px; }
+.swatch{ border-radius:4px; overflow:hidden; border:1px solid var(--line); background:#fff; }
+.swatch .tile{ height:64px; }
+.t1{ background:repeating-linear-gradient(100deg,#a97e4f 0 10px,#8f6a41 10px 20px); }
+.t2{ background:repeating-linear-gradient(45deg,#5b4331 0 8px,#6f5238 8px 16px); }
+.t3{ background:linear-gradient(135deg,#c9bda3,#e4dcc9); }
+.t4{ background:repeating-linear-gradient(90deg,#7a6a52 0 6px,#8c7a5f 6px 12px); }
+.t5{ background:linear-gradient(135deg,#3c2c22,#5c4432); }
+.t6{ background:repeating-linear-gradient(120deg,#c2a06b 0 12px,#b08d57 12px 24px); }
+.swatch .cap{ padding:8px 9px 10px; }
+.swatch .cap .p{ font-family:'Fraunces',serif; font-weight:600; font-size:12.5px; }
+.swatch .cap .s{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--ink-soft); margin-top:2px; }
+.svc-grid{ display:flex; gap:24px; margin-top:4px; }
+.svc-col{ flex:1; }
+.svc-col h3{ font-family:'Fraunces',serif; font-size:14px; margin:0 0 9px; }
+.svc-col ul{ margin:0; padding-left:0; list-style:none; }
+.svc-col li{ font-size:12.5px; color:var(--ink-soft); line-height:1.65; padding-left:15px; position:relative; }
+.svc-col li::before{ content:"—"; position:absolute; left:0; color:var(--brass); }
+.contact{ margin-top:auto; padding-top:14px; border-top:1px solid var(--line); font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); line-height:1.85; }
+.contact b{ color:var(--ink); font-weight:500; }
+.decision{ justify-content:center; align-items:center; text-align:center; }
+.decision h2.title{ margin-bottom:8px; }
+.decision p.lead{ font-size:13.5px; color:var(--ink-soft); max-width:44ch; margin:0 0 24px; }
+.decision-btns{ display:flex; gap:12px; }
+.dbtn{ padding:12px 22px; border-radius:5px; font-size:13px; font-weight:600; cursor:pointer; border:1px solid transparent; }
+.dbtn.accept{ background:var(--ok); color:#fff; }
+.dbtn.accept:hover{ background:#3f5a42; }
+.dbtn.decline{ background:none; border-color:var(--bad); color:var(--bad); }
+.dbtn.decline:hover{ background:var(--bad); color:#fff; }
+.decline-form{ margin-top:20px; width:100%; max-width:380px; }
+.decline-form textarea{ width:100%; min-height:80px; padding:10px 12px; border:1px solid var(--line); border-radius:4px; font-family:'Work Sans',sans-serif; font-size:13px; }
+.decline-form .btn{ margin-top:10px; }
+.decided-state{ text-align:center; }
+.decided-state .badge{ font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.1em; text-transform:uppercase; padding:6px 14px; border-radius:20px; display:inline-block; margin-bottom:12px; }
+.decided-state.accepted .badge{ background:#dbe6dc; color:var(--ok); }
+.decided-state.declined .badge{ background:#f0dcd9; color:var(--bad); }
+.controls{ display:flex; align-items:center; gap:16px; }
+.nav-btn{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; background:transparent; color:var(--linen); border:1px solid #5a4433; padding:8px 15px; border-radius:3px; cursor:pointer; }
+.nav-btn:hover:not(:disabled){ background:var(--brass); color:#241a14; border-color:var(--brass); }
+.nav-btn:disabled{ opacity:.3; cursor:default; }
+.dots{ display:flex; gap:6px; }
+.dot{ width:6px; height:6px; border-radius:50%; background:#5a4433; }
+.dot.active{ background:var(--brass); }
+.not-found{ color:var(--linen); text-align:center; font-family:'IBM Plex Mono',monospace; font-size:13px; }
+.admin-link{ position:fixed; bottom:14px; left:14px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#7a6a52; text-decoration:none; letter-spacing:.05em; }
+
+@media (max-width:640px){
+  .admin-body{ flex-direction:column; }
+  .list-pane{ width:100%; border-right:none; border-bottom:1px solid var(--line); }
+  .row2{ flex-direction:column; }
+  .li-row{ grid-template-columns:1fr; }
+  .gal-row{ grid-template-columns:1fr; }
+  .page{ padding:28px 24px 28px 38px; }
+  .cover{ padding-left:38px; }
+  .streams, .svc-grid{ flex-direction:column; }
+  .swatches{ grid-template-columns:repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ ADMIN ============ -->
+<div id="admin">
+  <div class="topbar">
+    <div class="brand">DC Flooring <span>QUOTE BUILDER</span></div>
+    <div class="mono" style="font-size:11px; color:#cbb896;">Dave's dashboard</div>
+  </div>
+  <div class="admin-body">
+    <div class="list-pane">
+      <button class="new-btn" id="newQuoteBtn">+ New Quote</button>
+      <div id="qList"></div>
+    </div>
+    <div class="editor-pane" id="editorPane"></div>
+  </div>
+</div>
+
+<!-- ============ CUSTOMER ============ -->
+<div id="customer">
+  <div class="stage" id="custStage"></div>
+</div>
+<a href="#admin" class="admin-link" id="adminLink" style="display:none;">Admin ↗</a>
+
+<script>
+/* ---------------- Supabase storage ---------------- */
+const SUPABASE_URL = 'https://lpkdsdfltejgczsuvpay.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_v9LluInQJDNQmMHnbxixWQ_Otl-hvvG';
+const SB_HEADERS = { apikey: SUPABASE_KEY, Authorization: 'Bearer '+SUPABASE_KEY };
+
+function toDbRow(q){
+  return {
+    ref: q.ref,
+    customer_name: q.customerName || '',
+    date: q.date || null,
+    valid_until: q.validUntil || null,
+    line_items: q.lineItems || [],
+    notes: q.notes || '',
+    gallery: q.gallery || [],
+    status: q.status || 'draft',
+    response: q.response || null,
+    updated_at: new Date().toISOString()
+  };
+}
+function fromDbRow(r){
+  return {
+    ref: r.ref,
+    customerName: r.customer_name || '',
+    date: r.date || '',
+    validUntil: r.valid_until || '',
+    lineItems: (r.line_items && r.line_items.length) ? r.line_items : [{product:'',qty:'',unitPrice:''}],
+    notes: r.notes || '',
+    gallery: (r.gallery && r.gallery.length) ? r.gallery : [{name:'',ref:'',tex:'t1'}],
+    status: r.status || 'draft',
+    response: r.response || null,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at
+  };
+}
+
+async function getQuote(ref){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/quotes?ref=eq.${encodeURIComponent(ref)}&select=*`, { headers: SB_HEADERS });
+    if(!res.ok) return null;
+    const rows = await res.json();
+    return rows[0] ? fromDbRow(rows[0]) : null;
+  }catch(e){ return null; }
+}
+async function saveQuote(q){
+  const row = toDbRow(q);
+  q.updatedAt = row.updated_at;
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/quotes?on_conflict=ref`, {
+      method:'POST',
+      headers:{ ...SB_HEADERS, 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates' },
+      body: JSON.stringify(row)
+    });
+    return res.ok;
+  }catch(e){ return false; }
+}
+async function listQuotes(){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/quotes?select=*&order=updated_at.desc`, { headers: SB_HEADERS });
+    if(!res.ok) return [];
+    const rows = await res.json();
+    return rows.map(fromDbRow);
+  }catch(e){ return []; }
+}
+async function nextRef(){
+  return 'DCF-' + Date.now().toString().slice(-6);
+}
+
+/* ---------------- defaults ---------------- */
+const TEXTURES = [
+  {id:'t1', label:'Oak Natural'}, {id:'t2', label:'Herringbone Walnut'},
+  {id:'t3', label:'Stone Grey'}, {id:'t4', label:'Textured Linen'},
+  {id:'t5', label:'Espresso Gloss'}, {id:'t6', label:'Brass Weave'}
+];
+function blankQuote(ref){
+  const today = new Date(); const valid = new Date(today.getTime()+14*86400000);
+  return {
+    ref, customerName:'', date: today.toISOString().slice(0,10), validUntil: valid.toISOString().slice(0,10),
+    lineItems: [{product:'', qty:'', unitPrice:''}],
+    notes:'Price valid for 14 days. 25% deposit required to confirm your fitting date.',
+    gallery: [{name:'', ref:'', tex:'t1'}],
+    status:'draft', response:null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+  };
+}
+function money(n){ return '£' + (isNaN(n)?0:n).toFixed(2); }
+function calcTotals(q){
+  const subtotal = q.lineItems.reduce((s,li)=>{
+    const qty = parseFloat(li.qty), price = parseFloat(li.unitPrice)||0;
+    return s + (qty ? qty*price : price);
+  },0);
+  const vat = subtotal*0.2;
+  return { subtotal, vat, total: subtotal+vat };
+}
+
+/* ---------------- ADMIN render ---------------- */
+let currentRef = null;
+let draft = null;
+
+async function renderList(){
+  const quotes = await listQuotes();
+  const el = document.getElementById('qList');
+  if(!quotes.length){ el.innerHTML = '<div class="empty-list">No quotes yet — create your first one.</div>'; return; }
+  el.innerHTML = quotes.map(q=>{
+    const {total} = calcTotals(q);
+    let reasonHtml = '';
+    if(q.status==='declined' && q.response && q.response.reason){
+      reasonHtml = `<div class="reason">"${escapeHtml(q.response.reason)}"</div>`;
+    }
+    return `<div class="qcard ${q.ref===currentRef?'active':''}" data-ref="${q.ref}">
+      <div class="row1"><span class="ref">${q.ref}</span><span class="pill ${q.status}">${q.status}</span></div>
+      <div class="name">${escapeHtml(q.customerName)||'Unnamed customer'}</div>
+      <div class="total">${money(total)}</div>
+      ${reasonHtml}
+    </div>`;
+  }).join('');
+  Array.from(el.querySelectorAll('.qcard')).forEach(c=>{
+    c.addEventListener('click', ()=> openEditor(c.dataset.ref));
+  });
+}
+
+async function openEditor(ref){
+  currentRef = ref;
+  draft = await getQuote(ref);
+  if(!draft) draft = blankQuote(ref);
+  renderEditor();
+  renderList();
+}
+
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function renderEditor(){
+  const pane = document.getElementById('editorPane');
+  const {subtotal, vat, total} = calcTotals(draft);
+  const liRows = draft.lineItems.map((li,i)=>{
+    const qty = parseFloat(li.qty), price=parseFloat(li.unitPrice)||0;
+    const lt = qty ? qty*price : price;
+    return `<div class="li-row" data-i="${i}">
+      <input class="li-product" placeholder="Product / SKU" value="${escapeHtml(li.product)}">
+      <input class="li-qty" placeholder="m² (blank=flat)" value="${escapeHtml(li.qty)}">
+      <input class="li-price" placeholder="Unit £" value="${escapeHtml(li.unitPrice)}">
+      <div class="li-total">${money(lt)}</div>
+      <button class="rm-btn" data-rm="${i}" title="Remove">×</button>
+    </div>`;
+  }).join('');
+  const galRows = draft.gallery.map((g,i)=>{
+    const opts = TEXTURES.map(t=>`<option value="${t.id}" ${t.id===g.tex?'selected':''}>${t.label}</option>`).join('');
+    return `<div class="gal-row" data-i="${i}">
+      <input class="g-name" placeholder="Product name" value="${escapeHtml(g.name)}">
+      <input class="g-ref" placeholder="Ref / colour" value="${escapeHtml(g.ref)}">
+      <select class="g-tex">${opts}</select>
+      <button class="rm-btn" data-rm="${i}" title="Remove">×</button>
+    </div>`;
+  }).join('');
+
+  let responseHtml = '';
+  if(draft.response){
+    const cls = draft.response.decision;
+    responseHtml = `<div class="response-box ${cls}">
+      <div class="rt">Customer ${cls==='accepted'?'accepted this quote':'declined this quote'} — ${new Date(draft.response.respondedAt).toLocaleDateString('en-GB')}</div>
+      ${draft.response.reason ? `<div class="rr">"${escapeHtml(draft.response.reason)}"</div>` : ''}
+    </div>`;
+  }
+
+  pane.innerHTML = `
+    <div class="editor-header">
+      <div>
+        <div class="eyebrow">${draft.ref} <span class="pill ${draft.status}" style="margin-left:8px;">${draft.status}</span></div>
+        <h2 style="font-size:22px;">${draft.customerName ? escapeHtml(draft.customerName) : 'New quote'}</h2>
+      </div>
+      <span class="saved-flash mono" id="savedFlash">Saved</span>
+    </div>
+
+    <div class="row2">
+      <div class="field"><label>Customer name</label><input id="f-name" value="${escapeHtml(draft.customerName)}"></div>
+      <div class="field"><label>Date</label><input id="f-date" type="date" value="${draft.date}"></div>
+      <div class="field"><label>Valid until</label><input id="f-valid" type="date" value="${draft.validUntil}"></div>
+    </div>
+
+    <div class="section-title">Line items</div>
+    <div id="liRows">${liRows}</div>
+    <button class="add-row-btn" id="addLi">+ Add line item</button>
+    <div class="totals-box">
+      <div><span>Subtotal</span><span>${money(subtotal)}</span></div>
+      <div><span>VAT (20%)</span><span>${money(vat)}</span></div>
+      <div class="grand"><span>Total</span><span>${money(total)}</span></div>
+    </div>
+
+    <div class="field" style="margin-top:22px;"><label>Notes / terms (shown on quote)</label><textarea id="f-notes">${escapeHtml(draft.notes)}</textarea></div>
+
+    <div class="section-title">Gallery — samples to show the customer</div>
+    <div id="galRows">${galRows}</div>
+    <button class="add-row-btn" id="addGal">+ Add sample</button>
+
+    ${responseHtml}
+
+    <div class="action-bar">
+      <button class="btn btn-primary" id="saveBtn">Save quote</button>
+      <button class="btn btn-ghost" id="previewBtn">Preview as customer</button>
+      ${draft.status==='draft' ? '' : ''}
+    </div>
+    <div class="link-box">
+      <input id="linkOut" readonly value="${siteBase()}/quote/${draft.ref}">
+      <button class="btn btn-ghost" id="copyBtn">Copy link</button>
+    </div>
+    <div class="link-note">Copy this and send it however you normally do — WhatsApp, text, email. Anyone with the link and quote number can view and respond to this quote. This clean-path link only resolves once the site is deployed with the redirect/404 fallback below — while testing locally, use "Preview as customer" instead.</div>
+  `;
+
+  // wire up
+  document.getElementById('f-name').addEventListener('input', e=> draft.customerName = e.target.value);
+  document.getElementById('f-date').addEventListener('input', e=> draft.date = e.target.value);
+  document.getElementById('f-valid').addEventListener('input', e=> draft.validUntil = e.target.value);
+  document.getElementById('f-notes').addEventListener('input', e=> draft.notes = e.target.value);
+
+  document.getElementById('addLi').addEventListener('click', ()=>{ draft.lineItems.push({product:'',qty:'',unitPrice:''}); renderEditor(); });
+  document.getElementById('addGal').addEventListener('click', ()=>{ if(draft.gallery.length<6){ draft.gallery.push({name:'',ref:'',tex:'t1'}); renderEditor(); } });
+
+  Array.from(document.querySelectorAll('#liRows .li-row')).forEach(row=>{
+    const i = +row.dataset.i;
+    row.querySelector('.li-product').addEventListener('input', e=> draft.lineItems[i].product = e.target.value);
+    row.querySelector('.li-qty').addEventListener('input', e=>{ draft.lineItems[i].qty = e.target.value; refreshTotalsOnly(); });
+    row.querySelector('.li-price').addEventListener('input', e=>{ draft.lineItems[i].unitPrice = e.target.value; refreshTotalsOnly(); });
+    const rm = row.querySelector('.rm-btn');
+    if(rm) rm.addEventListener('click', ()=>{ draft.lineItems.splice(i,1); if(!draft.lineItems.length) draft.lineItems.push({product:'',qty:'',unitPrice:''}); renderEditor(); });
+  });
+  Array.from(document.querySelectorAll('#galRows .gal-row')).forEach(row=>{
+    const i = +row.dataset.i;
+    row.querySelector('.g-name').addEventListener('input', e=> draft.gallery[i].name = e.target.value);
+    row.querySelector('.g-ref').addEventListener('input', e=> draft.gallery[i].ref = e.target.value);
+    row.querySelector('.g-tex').addEventListener('change', e=> draft.gallery[i].tex = e.target.value);
+    const rm = row.querySelector('.rm-btn');
+    if(rm) rm.addEventListener('click', ()=>{ draft.gallery.splice(i,1); if(!draft.gallery.length) draft.gallery.push({name:'',ref:'',tex:'t1'}); renderEditor(); });
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', async ()=>{
+    if(draft.status==='draft') draft.status = 'sent';
+    try{
+      await saveQuote(draft);
+      const flash = document.getElementById('savedFlash');
+      flash.classList.add('show');
+      setTimeout(()=> flash.classList.remove('show'), 1600);
+      renderList();
+    }catch(e){ alert('Could not save — please try again.'); }
+  });
+  document.getElementById('previewBtn').addEventListener('click', async ()=>{
+    await saveQuote(draft);
+    location.hash = draft.ref;
+  });
+  document.getElementById('copyBtn').addEventListener('click', ()=>{
+    const val = document.getElementById('linkOut').value;
+    if(navigator.clipboard){ navigator.clipboard.writeText(val).catch(()=>{}); }
+    const btn = document.getElementById('copyBtn');
+    const old = btn.textContent; btn.textContent='Copied'; setTimeout(()=> btn.textContent = old, 1300);
+  });
+}
+function refreshTotalsOnly(){
+  const {subtotal, vat, total} = calcTotals(draft);
+  const box = document.querySelector('.totals-box');
+  if(box){
+    box.innerHTML = `
+      <div><span>Subtotal</span><span>${money(subtotal)}</span></div>
+      <div><span>VAT (20%)</span><span>${money(vat)}</span></div>
+      <div class="grand"><span>Total</span><span>${money(total)}</span></div>`;
+  }
+  document.querySelectorAll('#liRows .li-row').forEach((row,i)=>{
+    const li = draft.lineItems[i]; const qty=parseFloat(li.qty), price=parseFloat(li.unitPrice)||0;
+    const lt = qty ? qty*price : price;
+    row.querySelector('.li-total').textContent = money(lt);
+  });
+}
+
+document.getElementById('newQuoteBtn').addEventListener('click', async ()=>{
+  const ref = await nextRef();
+  draft = blankQuote(ref);
+  currentRef = ref;
+  await saveQuote(draft);
+  renderEditor(); renderList();
+});
+
+/* ---------------- CUSTOMER render ---------------- */
+const PAGE_TABS = ['Cover','About','Quote','Gallery','Service','Decision'];
+
+async function renderCustomer(ref){
+  const stage = document.getElementById('custStage');
+  const q = await getQuote(ref);
+  if(!q){
+    stage.innerHTML = `<div class="not-found">Quote <strong>${escapeHtml(ref)}</strong> couldn't be found.<br>Double check the link, or ask DC Flooring to resend it.</div>`;
+    return;
+  }
+  const {subtotal, vat, total} = calcTotals(q);
+  const liRows = q.lineItems.filter(li=>li.product).map(li=>{
+    const qty = parseFloat(li.qty), price=parseFloat(li.unitPrice)||0;
+    const lt = qty ? qty*price : price;
+    return `<tr><td>${escapeHtml(li.product)}</td><td class="num">${li.qty?escapeHtml(li.qty):'—'}</td><td class="num">${money(price)}</td><td class="num">${money(lt)}</td></tr>`;
+  }).join('') || '<tr><td colspan="4" style="color:var(--ink-soft);">Line items to follow.</td></tr>';
+
+  const galItems = q.gallery.filter(g=>g.name).map(g=>
+    `<div class="swatch"><div class="tile ${g.tex}"></div><div class="cap"><div class="p">${escapeHtml(g.name)}</div><div class="s">${escapeHtml(g.ref)}</div></div></div>`
+  ).join('') || '<div style="color:var(--ink-soft); font-size:13px;">Samples to follow.</div>';
+
+  stage.innerHTML = `
+    <div class="stage-label">DC Flooring · Quote ${escapeHtml(q.ref)}</div>
+    <div class="book-wrap">
+      <div class="spine-shadow"></div>
+      <div class="edge-stack left" id="edgeLeft"></div>
+      <div class="edge-stack right" id="edgeRight"></div>
+      <div class="book" id="book">
+
+        <div class="leaf" data-leaf="0"><div class="face front"><div class="page img-page">
+          <img class="page-bg" src="1.png" alt="DC Flooring — cover">
+          <div class="cover-fields">
+            <div class="cf-name">${escapeHtml(q.customerName)||'—'}</div>
+            <div class="cf-ref">Quote Ref: ${escapeHtml(q.ref)}</div>
+            <div class="cf-date">${fmtDate(q.date)}</div>
+          </div>
+        </div></div><div class="face back"></div></div>
+
+        <div class="leaf" data-leaf="1"><div class="face front"><div class="page img-page">
+          <img class="page-bg" src="2.png" alt="DC Flooring — about">
+        </div></div><div class="face back"></div></div>
+
+        <div class="leaf" data-leaf="2"><div class="face front"><div class="page img-page">
+          <img class="page-bg" src="3.png" alt="DC Flooring — how we work">
+        </div></div><div class="face back"></div></div>
+
+        <div class="leaf" data-leaf="3"><div class="face front"><div class="page quote">
+          <div class="eyebrow">Your Quote</div><h2 class="title">Itemised breakdown</h2>
+          <div class="quotebox"><table><thead><tr><th>Product</th><th class="num">m²</th><th class="num">Unit Price</th><th class="num">Total</th></tr></thead><tbody>${liRows}</tbody></table></div>
+          <div class="totals"><div><span>Subtotal</span><span>${money(subtotal)}</span></div><div><span>VAT (20%)</span><span>${money(vat)}</span></div><div class="grand"><span>Total</span><span>${money(total)}</span></div></div>
+          <div class="note">${escapeHtml(q.notes)}</div>
+        </div><div class="pageno">04</div></div><div class="face back"></div></div>
+
+        <div class="leaf" data-leaf="4"><div class="face front"><div class="page gallery">
+          <div class="eyebrow">Selection</div><h2 class="title">Samples for this quote</h2>
+          <div class="swatches">${galItems}</div>
+        </div><div class="pageno">05</div></div><div class="face back"></div></div>
+
+        <div class="leaf" data-leaf="5"><div class="face front"><div class="page service">
+          <div class="eyebrow">Service</div><h2 class="title">What's included &amp; next steps</h2>
+          <div class="svc-grid">
+            <div class="svc-col"><h3>Included</h3><ul><li>Delivery to site or collection</li><li>Professional fitting</li><li>Aftercare guidance</li><li>Standard warranty</li></ul></div>
+            <div class="svc-col"><h3>Next steps</h3><ul><li>Confirm your order</li><li>Book your fitting date</li><li>Site measure if required</li><li>Installation day</li></ul></div>
+          </div>
+          <div class="contact"><b>DC Flooring</b> — [Address line, placeholder]<br>[Phone number] · [Email address] · [Website]</div>
+        </div><div class="pageno">06</div></div><div class="face back"></div></div>
+
+        <div class="leaf" data-leaf="6"><div class="face front"><div class="page decision" id="decisionPage"></div></div><div class="face back"></div></div>
+
+        <div class="tabs">
+          <div class="tab active" data-goto="0">Cover</div>
+          <div class="tab" data-goto="1">About</div>
+          <div class="tab" data-goto="2">How we work</div>
+          <div class="tab" data-goto="3">Quote</div>
+          <div class="tab" data-goto="4">Gallery</div>
+          <div class="tab" data-goto="5">Service</div>
+          <div class="tab" data-goto="6">Decide</div>
+        </div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="nav-btn" id="prevBtn">← Prev</button>
+      <div class="dots" id="dots"></div>
+      <button class="nav-btn" id="nextBtn">Next →</button>
+    </div>
+  `;
+
+  renderDecisionPage(q);
+  wireBook();
+}
+
+function fmtDate(s){ if(!s) return '—'; const d = new Date(s+'T00:00:00'); return isNaN(d) ? s : d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}); }
+
+function renderDecisionPage(q){
+  const el = document.getElementById('decisionPage');
+  if(q.response){
+    const cls = q.response.decision;
+    el.innerHTML = `<div class="decided-state ${cls}">
+      <div class="badge">${cls==='accepted'?'Quote accepted':'Quote declined'}</div>
+      <div style="font-size:13px; color:var(--ink-soft); max-width:38ch;">
+        ${cls==='accepted' ? "Thanks — we've got your confirmation. We'll be in touch to get things booked in." : "Thanks for letting us know."}
+        ${q.response.reason ? `<div style="margin-top:10px; font-style:italic;">"${escapeHtml(q.response.reason)}"</div>` : ''}
+      </div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = `
+    <h2 class="title">What would you like to do?</h2>
+    <p class="lead">Happy with the quote? Confirm below and we'll get your fitting booked in. If it's not quite right, let us know why.</p>
+    <div class="decision-btns">
+      <button class="dbtn accept" id="acceptBtn">Accept quote</button>
+      <button class="dbtn decline" id="declineBtn">Decline</button>
+    </div>
+    <div class="decline-form" id="declineForm" style="display:none;">
+      <textarea id="declineReason" placeholder="Tell us why — price, timing, changed your mind about the product..."></textarea>
+      <button class="btn btn-primary">Submit</button>
+    </div>
+  `;
+  document.getElementById('acceptBtn').addEventListener('click', ()=> submitDecision(q, 'accepted', ''));
+  document.getElementById('declineBtn').addEventListener('click', ()=>{
+    document.getElementById('declineForm').style.display = 'block';
+  });
+  document.querySelector('#declineForm .btn').addEventListener('click', ()=>{
+    const reason = document.getElementById('declineReason').value.trim();
+    submitDecision(q, 'declined', reason);
+  });
+}
+
+async function submitDecision(q, decision, reason){
+  q.status = decision;
+  q.response = { decision, reason, respondedAt: new Date().toISOString() };
+  try{ await saveQuote(q); }catch(e){ /* still show confirmation locally */ }
+  renderDecisionPage(q);
+}
+
+function wireBook(){
+  const leaves = Array.from(document.querySelectorAll('.leaf'));
+  const tabs = Array.from(document.querySelectorAll('.tab'));
+  const dotsEl = document.getElementById('dots');
+  const edgeLeft = document.getElementById('edgeLeft');
+  const edgeRight = document.getElementById('edgeRight');
+  const total = leaves.length;
+  let current = 0;
+  dotsEl.innerHTML = leaves.map((_,i)=>`<div class="dot" data-i="${i}"></div>`).join('');
+  const dots = Array.from(dotsEl.children);
+
+  function renderEdges(){
+    const leftN = Math.min(current, 6);
+    const rightN = Math.min(total - current, 6);
+    edgeLeft.innerHTML = Array.from({length:leftN}).map((_,i)=>
+      `<div class="sheet" style="transform:translateX(${-(i+1)*2}px) scaleY(${1-i*0.03}); opacity:${1-i*0.13}; z-index:${leftN-i}"></div>`
+    ).join('');
+    edgeRight.innerHTML = Array.from({length:rightN}).map((_,i)=>
+      `<div class="sheet" style="transform:translateX(${(i+1)*2}px) scaleY(${1-i*0.03}); opacity:${1-i*0.13}; z-index:${rightN-i}"></div>`
+    ).join('');
+  }
+
+  function render(){
+    leaves.forEach((leaf,i)=>{
+      const flipped = i < current;
+      leaf.classList.toggle('flipped', flipped);
+      leaf.style.zIndex = flipped ? (i+1) : (total - i + 10);
+    });
+    const activeIdx = Math.min(current, total-1);
+    tabs.forEach((t,i)=> t.classList.toggle('active', i===activeIdx));
+    dots.forEach((d,i)=> d.classList.toggle('active', i===activeIdx));
+    document.getElementById('prevBtn').disabled = current===0;
+    document.getElementById('nextBtn').disabled = current===total;
+    renderEdges();
+  }
+  function goTo(i){
+    const newCurrent = Math.max(0, Math.min(i, total));
+    const lo = Math.min(current, newCurrent), hi = Math.max(current, newCurrent);
+    for(let k=lo; k<hi; k++){
+      const leaf = leaves[k];
+      leaf.classList.add('turning');
+      setTimeout(()=> leaf.classList.remove('turning'), 820);
+    }
+    current = newCurrent;
+    render();
+  }
+  document.getElementById('nextBtn').addEventListener('click', ()=> goTo(current+1));
+  document.getElementById('prevBtn').addEventListener('click', ()=> goTo(current-1));
+  tabs.forEach(t=> t.addEventListener('click', ()=> goTo(parseInt(t.dataset.goto,10))));
+  dots.forEach(d=> d.addEventListener('click', ()=> goTo(parseInt(d.dataset.i,10))));
+  leaves.forEach((leaf,i)=> leaf.addEventListener('click', (e)=>{
+    if(e.target.closest('.tab') || e.target.closest('button') || e.target.closest('textarea')) return;
+    if(i===current) goTo(current+1); else if(i===current-1) goTo(current-1);
+  }));
+  render();
+}
+
+/* ---------------- routing ---------------- */
+function siteBase(){
+  // Strips index.html / trailing quote path so links work whether the site
+  // sits at a domain root (Netlify) or a subfolder like /repo-name/ (GitHub Pages).
+  let base = location.pathname.replace(/\/quote\/[^\/?#]+\/?$/i, '').replace(/\/(index\.html|404\.html)?$/i, '');
+  return location.origin + base;
+}
+function routeRef(){
+  const pathMatch = location.pathname.match(/\/quote\/([^\/?#]+)\/?$/i);
+  if(pathMatch) return decodeURIComponent(pathMatch[1]);
+  const hash = location.hash.replace('#','').trim();
+  if(hash && hash.toLowerCase() !== 'admin') return hash;
+  return null;
+}
+async function route(){
+  const ref = routeRef();
+  const isAdmin = !ref;
+  document.getElementById('admin').style.display = isAdmin ? 'flex' : 'none';
+  document.getElementById('customer').style.display = isAdmin ? 'none' : 'flex';
+  document.getElementById('adminLink').style.display = isAdmin ? 'none' : 'block';
+  if(isAdmin){
+    await renderList();
+    if(!draft){
+      const quotes = await listQuotes();
+      if(quotes.length){ openEditor(quotes[0].ref); } else { document.getElementById('editorPane').innerHTML = '<div class="empty-list" style="padding-top:60px;">Create your first quote to get started.</div>'; }
+    } else {
+      renderEditor(); renderList();
+    }
+  } else {
+    await renderCustomer(ref);
+  }
+}
+window.addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>
