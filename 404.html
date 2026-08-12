@@ -29,14 +29,14 @@ h1,h2,h3{ font-family:'Fraunces',serif; font-weight:600; margin:0; }
 
 /* ===== ADMIN ===== */
 #admin{ display:none; min-height:100vh; }
-.topbar{
-  background:var(--walnut); color:var(--linen); padding:16px 28px;
-  display:flex; align-items:center; justify-content:space-between;
+.admin-body{ display:flex; max-width:1180px; margin:0 auto; gap:0; min-height:100vh; }
+.sidebar{
+  width:200px; flex-shrink:0; background:#272727; color:var(--linen); padding:28px 20px;
+  display:flex; flex-direction:column; align-items:center; text-align:center; gap:14px;
 }
-.topbar .brand{ font-family:'Fraunces',serif; font-weight:600; font-size:18px; }
-.topbar .brand span{ color:var(--brass); font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.2em; display:block; font-weight:400; }
-.admin-body{ display:flex; max-width:1180px; margin:0 auto; gap:0; min-height:calc(100vh - 62px); }
-.list-pane{ width:340px; border-right:1px solid var(--line); padding:20px; background:var(--paper); }
+.sidebar img{ width:100%; max-width:130px; height:auto; }
+.sidebar .tagline{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--brass); }
+.list-pane{ width:300px; flex-shrink:0; border-right:1px solid var(--line); padding:20px; background:var(--paper); }
 .new-btn{
   width:100%; padding:11px; background:var(--brass); color:#fff; border:none; border-radius:4px;
   font-size:13px; font-weight:600; letter-spacing:.02em; cursor:pointer; margin-bottom:16px;
@@ -77,8 +77,6 @@ h1,h2,h3{ font-family:'Fraunces',serif; font-weight:600; margin:0; }
 .totals-box{ margin-top:12px; align-self:flex-end; width:240px; margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:13px; }
 .totals-box div{ display:flex; justify-content:space-between; padding:5px 0; color:var(--ink-soft); }
 .totals-box .grand{ color:var(--ink); font-weight:600; border-top:1px solid var(--line); margin-top:4px; padding-top:9px; font-size:15px; }
-
-.gal-row{ display:grid; grid-template-columns:1fr 1fr 1fr 32px; gap:8px; margin-bottom:8px; align-items:center; }
 
 .action-bar{ display:flex; gap:10px; margin-top:26px; align-items:center; flex-wrap:wrap; }
 .btn{ padding:10px 18px; border-radius:4px; font-size:13px; font-weight:600; cursor:pointer; border:1px solid transparent; }
@@ -200,10 +198,11 @@ td.num, th.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
 
 @media (max-width:640px){
   .admin-body{ flex-direction:column; }
+  .sidebar{ width:100%; flex-direction:row; justify-content:center; padding:16px 20px; gap:12px; }
+  .sidebar img{ max-width:70px; }
   .list-pane{ width:100%; border-right:none; border-bottom:1px solid var(--line); }
   .row2{ flex-direction:column; }
   .li-row{ grid-template-columns:1fr; }
-  .gal-row{ grid-template-columns:1fr; }
   .page{ padding:28px 24px 28px 38px; }
   .cover{ padding-left:38px; }
   .streams, .svc-grid{ flex-direction:column; }
@@ -215,11 +214,11 @@ td.num, th.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
 
 <!-- ============ ADMIN ============ -->
 <div id="admin">
-  <div class="topbar">
-    <div class="brand">DC Flooring <span>QUOTE BUILDER</span></div>
-    <div class="mono" style="font-size:11px; color:#cbb896;">Dave's dashboard</div>
-  </div>
   <div class="admin-body">
+    <div class="sidebar">
+      <img src="DC Flooring Logo.png" alt="DC Flooring logo" class="sidebar-logo">
+      <div class="tagline">Quote Builder</div>
+    </div>
     <div class="list-pane">
       <button class="new-btn" id="newQuoteBtn">+ New Quote</button>
       <div id="qList"></div>
@@ -303,11 +302,6 @@ async function nextRef(){
 }
 
 /* ---------------- defaults ---------------- */
-const TEXTURES = [
-  {id:'t1', label:'Oak Natural'}, {id:'t2', label:'Herringbone Walnut'},
-  {id:'t3', label:'Stone Grey'}, {id:'t4', label:'Textured Linen'},
-  {id:'t5', label:'Espresso Gloss'}, {id:'t6', label:'Brass Weave'}
-];
 function blankQuote(ref){
   const today = new Date(); const valid = new Date(today.getTime()+14*86400000);
   return {
@@ -378,16 +372,6 @@ function renderEditor(){
       <button class="rm-btn" data-rm="${i}" title="Remove">×</button>
     </div>`;
   }).join('');
-  const galRows = draft.gallery.map((g,i)=>{
-    const opts = TEXTURES.map(t=>`<option value="${t.id}" ${t.id===g.tex?'selected':''}>${t.label}</option>`).join('');
-    return `<div class="gal-row" data-i="${i}">
-      <input class="g-name" placeholder="Product name" value="${escapeHtml(g.name)}">
-      <input class="g-ref" placeholder="Ref / colour" value="${escapeHtml(g.ref)}">
-      <select class="g-tex">${opts}</select>
-      <button class="rm-btn" data-rm="${i}" title="Remove">×</button>
-    </div>`;
-  }).join('');
-
   let responseHtml = '';
   if(draft.response){
     const cls = draft.response.decision;
@@ -423,10 +407,6 @@ function renderEditor(){
 
     <div class="field" style="margin-top:22px;"><label>Notes / terms (shown on quote)</label><textarea id="f-notes">${escapeHtml(draft.notes)}</textarea></div>
 
-    <div class="section-title">Gallery — samples to show the customer</div>
-    <div id="galRows">${galRows}</div>
-    <button class="add-row-btn" id="addGal">+ Add sample</button>
-
     ${responseHtml}
 
     <div class="action-bar">
@@ -448,7 +428,6 @@ function renderEditor(){
   document.getElementById('f-notes').addEventListener('input', e=> draft.notes = e.target.value);
 
   document.getElementById('addLi').addEventListener('click', ()=>{ draft.lineItems.push({product:'',qty:'',unitPrice:''}); renderEditor(); });
-  document.getElementById('addGal').addEventListener('click', ()=>{ if(draft.gallery.length<6){ draft.gallery.push({name:'',ref:'',tex:'t1'}); renderEditor(); } });
 
   Array.from(document.querySelectorAll('#liRows .li-row')).forEach(row=>{
     const i = +row.dataset.i;
@@ -457,14 +436,6 @@ function renderEditor(){
     row.querySelector('.li-price').addEventListener('input', e=>{ draft.lineItems[i].unitPrice = e.target.value; refreshTotalsOnly(); });
     const rm = row.querySelector('.rm-btn');
     if(rm) rm.addEventListener('click', ()=>{ draft.lineItems.splice(i,1); if(!draft.lineItems.length) draft.lineItems.push({product:'',qty:'',unitPrice:''}); renderEditor(); });
-  });
-  Array.from(document.querySelectorAll('#galRows .gal-row')).forEach(row=>{
-    const i = +row.dataset.i;
-    row.querySelector('.g-name').addEventListener('input', e=> draft.gallery[i].name = e.target.value);
-    row.querySelector('.g-ref').addEventListener('input', e=> draft.gallery[i].ref = e.target.value);
-    row.querySelector('.g-tex').addEventListener('change', e=> draft.gallery[i].tex = e.target.value);
-    const rm = row.querySelector('.rm-btn');
-    if(rm) rm.addEventListener('click', ()=>{ draft.gallery.splice(i,1); if(!draft.gallery.length) draft.gallery.push({name:'',ref:'',tex:'t1'}); renderEditor(); });
   });
 
   document.getElementById('saveBtn').addEventListener('click', async ()=>{
