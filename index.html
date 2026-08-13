@@ -5,11 +5,14 @@
 <title>DC Flooring — Quotes</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Poppins:wght@500;600&display=swap');
+/* "Garet" isn't available on Google Fonts or Fontshare (checked both — it's a commercial font,
+   not freely CDN-hosted). Using Poppins as a clean geometric-sans fallback for the dark pages'
+   headings; swap the font-family below for the real thing if a licensed copy becomes available. */
 
 :root{
   --bark:#241a14; --walnut:#3c2c22; --oak:#a97e4f; --brass:#b08d57;
-  --linen:#f3ede1; --paper:#faf6ee; --ink:#2a2019; --ink-soft:#6b5c4d; --line:#d9cbb2;
+  --linen:#f3ede1; --linen-soft:rgba(243,237,225,.62); --paper:#faf6ee; --ink:#2a2019; --ink-soft:#6b5c4d; --line:#d9cbb2;
   --ok:#4c6b4f; --bad:#a1493f;
 }
 *{ box-sizing:border-box; }
@@ -190,6 +193,43 @@ td.num, th.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
 .decided-state .badge{ font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.1em; text-transform:uppercase; padding:6px 14px; border-radius:20px; display:inline-block; margin-bottom:12px; }
 .decided-state.accepted .badge{ background:#dbe6dc; color:var(--ok); }
 .decided-state.declined .badge{ background:#f0dcd9; color:var(--bad); }
+.decided-msg{ font-size:13px; max-width:38ch; }
+
+/* ===== dark content pages: Quote / Gallery / Service / Decision ===== */
+.dark-page{ background:#272727; border-color:#3d3d3d; color:var(--linen); }
+.dark-page::before{ background:linear-gradient(to right, rgba(0,0,0,.35), transparent); }
+.dark-page .eyebrow{ font-family:'Poppins',sans-serif; font-weight:500; letter-spacing:.16em; color:var(--brass); }
+.dark-page h2.title{ font-family:'Poppins',sans-serif; font-weight:500; text-transform:uppercase; letter-spacing:.02em; font-size:21px; color:#fff; }
+.dark-page .pageno{ color:rgba(243,237,225,.4); }
+
+.dark-page .quotebox{ border-color:#3d3d3d; }
+.dark-page thead th{ background:#1d1d1d; color:var(--brass); border-bottom-color:#3d3d3d; }
+.dark-page tbody td{ color:var(--linen); border-bottom-color:#3d3d3d; }
+.dark-page .totals div{ color:var(--linen-soft); }
+.dark-page .totals .grand{ color:var(--brass); border-top-color:#3d3d3d; }
+.dark-page .note{ color:var(--linen-soft); }
+
+.dark-page .swatch{ background:#1d1d1d; border-color:#3d3d3d; }
+.dark-page .swatch .cap .p{ color:var(--linen); }
+.dark-page .swatch .cap .s{ color:var(--linen-soft); }
+
+.dark-page .svc-col h3{ color:var(--brass); }
+.dark-page .svc-col li{ color:var(--linen-soft); }
+.dark-page .contact{ color:var(--linen-soft); border-top-color:#3d3d3d; }
+.dark-page .contact b{ color:var(--linen); }
+
+.dark-page.decision p.lead{ color:var(--linen-soft); }
+.dark-page .decided-msg{ color:var(--linen-soft); }
+.dark-page .dbtn.decline{ border-color:#c96b5c; color:#df9c90; }
+.dark-page .dbtn.decline:hover{ background:#c96b5c; color:#fff; }
+.dark-page .decline-form textarea{ background:#1d1d1d; border-color:#3d3d3d; color:var(--linen); }
+
+/* tightened spacing so Included/Next steps/contact all fit without scrolling */
+.service .svc-grid{ gap:18px; margin-top:2px; }
+.service .svc-col h3{ font-size:12px; margin:0 0 6px; }
+.service .svc-col li{ font-size:11px; line-height:1.5; padding-left:12px; margin-bottom:1px; }
+.service .contact{ padding-top:10px; font-size:9.5px; line-height:1.55; }
+.service h2.title{ margin:0 0 10px; }
 .controls{ display:flex; align-items:center; gap:16px; }
 .nav-btn{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; background:transparent; color:var(--linen); border:1px solid #5a4433; padding:8px 15px; border-radius:3px; cursor:pointer; }
 .nav-btn:hover:not(:disabled){ background:var(--brass); color:#241a14; border-color:var(--brass); }
@@ -589,19 +629,19 @@ async function renderCustomer(routeInfo){
           <img class="page-bg" src="${siteBase()}/3.png" alt="DC Flooring — how we work">
         </div>
 
-        <div class="page quote" data-density="hard">
+        <div class="page quote dark-page" data-density="hard">
           <div class="eyebrow">Your Quote</div><h2 class="title">Itemised breakdown</h2>
           <div class="quotebox"><table><thead><tr><th>Product</th><th class="num">m²</th><th class="num">Unit Price</th><th class="num">Total</th></tr></thead><tbody>${liRows}</tbody></table></div>
           <div class="totals"><div><span>Subtotal</span><span>${money(subtotal)}</span></div><div><span>VAT (20%)</span><span>${money(vat)}</span></div><div class="grand"><span>Total</span><span>${money(total)}</span></div></div>
           <div class="note">${escapeHtml(q.notes)}</div>
         <div class="pageno">04</div></div>
 
-        <div class="page gallery" data-density="hard">
+        <div class="page gallery dark-page" data-density="hard">
           <div class="eyebrow">Selection</div><h2 class="title">Samples for this quote</h2>
           <div class="swatches">${galItems}</div>
         <div class="pageno">05</div></div>
 
-        <div class="page service" data-density="hard">
+        <div class="page service dark-page" data-density="hard">
           <div class="eyebrow">Service</div><h2 class="title">What's included &amp; next steps</h2>
           <div class="svc-grid">
             <div class="svc-col"><h3>Included</h3><ul><li>Delivery to site or collection</li><li>Professional fitting</li><li>Aftercare guidance</li><li>Standard warranty</li></ul></div>
@@ -610,7 +650,7 @@ async function renderCustomer(routeInfo){
           <div class="contact"><b>DC Flooring</b> — [Address line, placeholder]<br>[Phone number] · [Email address] · [Website]</div>
         <div class="pageno">06</div></div>
 
-        <div class="page decision" id="decisionPage" data-density="hard"></div>
+        <div class="page decision dark-page" id="decisionPage" data-density="hard"></div>
       </div>
     </div>
     <div class="controls">
@@ -632,7 +672,7 @@ function renderDecisionPage(q){
     const cls = q.response.decision;
     el.innerHTML = `<div class="decided-state ${cls}">
       <div class="badge">${cls==='accepted'?'Quote accepted':'Quote declined'}</div>
-      <div style="font-size:13px; color:var(--ink-soft); max-width:38ch;">
+      <div class="decided-msg">
         ${cls==='accepted' ? "Thanks — we've got your confirmation. We'll be in touch to get things booked in." : "Thanks for letting us know."}
         ${q.response.reason ? `<div style="margin-top:10px; font-style:italic;">"${escapeHtml(q.response.reason)}"</div>` : ''}
       </div>
