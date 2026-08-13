@@ -120,6 +120,7 @@ h1,h2,h3{ font-family:'Fraunces',serif; font-weight:600; margin:0; }
 .stage{ width:100%; max-width:480px; display:flex; flex-direction:column; align-items:center; gap:22px; }
 .book-wrap{ position:relative; width:100%; aspect-ratio:1000/1400; }
 .spine-shadow{ position:absolute; inset:0; border-radius:6px; box-shadow:0 30px 60px -20px rgba(0,0,0,.65), 0 10px 25px -10px rgba(0,0,0,.5); pointer-events:none; z-index:-1; }
+.book-back{ position:absolute; inset:0; background:#272727; border-radius:6px; }
 #book{ width:100%; height:100%; }
 .page{ position:relative; height:100%; padding:26px 22px 22px 32px; display:flex; flex-direction:column; overflow:hidden auto; background:var(--paper); border-radius:6px; border:1px solid var(--line); }
 .page::before{ content:""; position:absolute; top:0; left:0; bottom:0; width:18px; background:linear-gradient(to right, rgba(36,26,20,.16), transparent); z-index:1; }
@@ -568,9 +569,10 @@ async function renderCustomer(routeInfo){
   stage.innerHTML = `
     <div class="book-wrap">
       <div class="spine-shadow"></div>
+      <div class="book-back"></div>
       <div id="book">
 
-        <div class="page img-page">
+        <div class="page img-page" data-density="hard">
           <img class="page-bg" src="${siteBase()}/1.png" alt="DC Flooring — cover">
           <div class="cover-fields">
             <div class="cf-name">${escapeHtml(q.customerName)||'—'}</div>
@@ -579,27 +581,27 @@ async function renderCustomer(routeInfo){
           </div>
         </div>
 
-        <div class="page img-page">
+        <div class="page img-page" data-density="hard">
           <img class="page-bg" src="${siteBase()}/2.png" alt="DC Flooring — about">
         </div>
 
-        <div class="page img-page">
+        <div class="page img-page" data-density="hard">
           <img class="page-bg" src="${siteBase()}/3.png" alt="DC Flooring — how we work">
         </div>
 
-        <div class="page quote">
+        <div class="page quote" data-density="hard">
           <div class="eyebrow">Your Quote</div><h2 class="title">Itemised breakdown</h2>
           <div class="quotebox"><table><thead><tr><th>Product</th><th class="num">m²</th><th class="num">Unit Price</th><th class="num">Total</th></tr></thead><tbody>${liRows}</tbody></table></div>
           <div class="totals"><div><span>Subtotal</span><span>${money(subtotal)}</span></div><div><span>VAT (20%)</span><span>${money(vat)}</span></div><div class="grand"><span>Total</span><span>${money(total)}</span></div></div>
           <div class="note">${escapeHtml(q.notes)}</div>
         <div class="pageno">04</div></div>
 
-        <div class="page gallery">
+        <div class="page gallery" data-density="hard">
           <div class="eyebrow">Selection</div><h2 class="title">Samples for this quote</h2>
           <div class="swatches">${galItems}</div>
         <div class="pageno">05</div></div>
 
-        <div class="page service">
+        <div class="page service" data-density="hard">
           <div class="eyebrow">Service</div><h2 class="title">What's included &amp; next steps</h2>
           <div class="svc-grid">
             <div class="svc-col"><h3>Included</h3><ul><li>Delivery to site or collection</li><li>Professional fitting</li><li>Aftercare guidance</li><li>Standard warranty</li></ul></div>
@@ -608,7 +610,7 @@ async function renderCustomer(routeInfo){
           <div class="contact"><b>DC Flooring</b> — [Address line, placeholder]<br>[Phone number] · [Email address] · [Website]</div>
         <div class="pageno">06</div></div>
 
-        <div class="page decision" id="decisionPage"></div>
+        <div class="page decision" id="decisionPage" data-density="hard"></div>
       </div>
     </div>
     <div class="controls">
