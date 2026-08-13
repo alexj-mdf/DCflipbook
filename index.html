@@ -131,9 +131,9 @@ h1,h2,h3{ font-family:'Fraunces',serif; font-weight:600; margin:0; }
 .page::before{ content:""; position:absolute; top:0; left:0; bottom:0; width:18px; background:linear-gradient(to right, rgba(36,26,20,.16), transparent); z-index:1; }
 .page.img-page{ padding:0; overflow:hidden; }
 .page-bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
-.cover-fields{ position:absolute; left:56%; width:32%; bottom:8%; text-align:right; display:flex; flex-direction:column; gap:.35em; color:#f3ede1; font-family:'IBM Plex Mono',monospace; z-index:2; }
-.cover-fields .cf-name{ font-size:.95em; letter-spacing:.02em; }
-.cover-fields .cf-ref, .cover-fields .cf-date{ font-size:.78em; color:#d8c8ae; }
+.cover-fields{ position:absolute; left:48%; width:40%; top:85.5%; text-align:right; display:flex; flex-direction:column; gap:.15em; line-height:1.15; color:#f3ede1; font-family:'IBM Plex Mono',monospace; z-index:2; }
+.cover-fields .cf-name{ font-size:.85em; letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cover-fields .cf-ref, .cover-fields .cf-date{ font-size:.68em; color:#d8c8ae; white-space:nowrap; }
 .cover{ background:radial-gradient(120% 90% at 15% 0%, #4d3826 0%, transparent 55%), linear-gradient(155deg, var(--walnut), var(--bark) 70%); color:var(--linen); justify-content:space-between; padding-left:56px; }
 .cover .mark{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.3em; color:var(--brass); text-transform:uppercase; }
 .cover h1{ font-family:'Fraunces',serif; font-weight:600; font-size:clamp(34px,5.5vw,52px); line-height:1.02; margin:16px 0 0; }
@@ -579,7 +579,7 @@ async function renderCustomer(routeInfo){
           <img class="page-bg" src="${siteBase()}/1.png" alt="DC Flooring — cover">
           <div class="cover-fields">
             <div class="cf-name">${escapeHtml(q.customerName)||'—'}</div>
-            <div class="cf-ref">Quote Ref: ${escapeHtml(q.ref)}</div>
+            <div class="cf-ref">Ref: ${escapeHtml(q.ref)}</div>
             <div class="cf-date">${fmtDate(q.date)}</div>
           </div>
         </div></div><div class="face back"></div></div>
