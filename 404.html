@@ -124,11 +124,7 @@ h1,h2,h3{ font-family:'Fraunces',serif; font-weight:600; margin:0; }
 .leaf{ position:absolute; top:0; left:0; width:100%; height:100%; transform-style:preserve-3d; transform-origin:left center; transform:rotateY(0deg); }
 .leaf.flipped{ transform:rotateY(-178deg); }
 .leaf.fallback-turning{ transition:transform 480ms cubic-bezier(.45,.05,.35,1); }
-.curl-mesh{ position:absolute; inset:0; display:none; transform-style:preserve-3d; z-index:6; pointer-events:none; }
-.curl-tile{ position:absolute; background:var(--linen); overflow:hidden; box-shadow:inset -1px 0 0 rgba(255,255,255,.18); }
-.curl-tile-face{ position:absolute; inset:0; backface-visibility:hidden; }
-.curl-tile-img{ position:absolute; display:block; }
-.curl-tile-shade{ position:absolute; inset:0; background:#000; opacity:0; }
+.curl-canvas{ position:absolute; inset:0; display:none; z-index:6; pointer-events:none; }
 .curl-shadow-blob{ position:absolute; top:0; bottom:0; width:70px; margin-left:-35px; background:radial-gradient(ellipse at center, rgba(0,0,0,.4), transparent 72%); opacity:0; z-index:5; pointer-events:none; }
 .face{ position:absolute; top:0; left:0; width:100%; height:100%; backface-visibility:hidden; border-radius:6px; overflow:hidden; background:var(--paper); border:1px solid var(--line); }
 .face.back{ transform:rotateY(180deg); background:var(--linen); }
@@ -677,13 +673,15 @@ async function submitDecision(q, decision, reason){
 }
 
 /* ---------------- page curl engine ---------------- */
-// Replaces a single rigid rotateY() flip with a grid of independently-timed
-// tiles so the page bends like paper instead of rotating as a flat plane.
-const CURL_COLS = window.innerWidth < 640 ? 4 : 6;
+// Replaces a single rigid rotateY() flip with a continuous canvas-rendered
+// curl — many thin strips blitted with soft foreshortening, not discrete
+// DOM boxes, so the page reads as one bending sheet instead of tiled chunks.
+const CURL_COLS = window.innerWidth < 640 ? 34 : 56;
 const CURL_ROWS = window.innerWidth < 640 ? 3 : 4;
-const CURL_DELAY_X = 0.62; // how much a tile's horizontal position (spine->edge) delays its turn
-const CURL_DELAY_Y = 0.23; // how much its vertical position (top->bottom) delays it — creates the diagonal, corner-first sweep
+const CURL_DELAY_X = 0.62; // how much a strip's horizontal position (spine->edge) delays its turn
+const CURL_DELAY_Y = 0.15; // how much its vertical position (top->bottom) delays it — creates the diagonal, corner-first sweep
 const CURL_MAX_DELAY = CURL_DELAY_X + CURL_DELAY_Y;
+const CURL_OVERLAP = 1.5; // px of extra draw overlap between strips so no hairline seams show
 
 function easeInOutCubic(x){ return x < 0.5 ? 4*x*x*x : 1 - Math.pow(-2*x+2, 3)/2; }
 
@@ -712,84 +710,89 @@ function snapshotEl(el){
   });
 }
 
-function buildCurlMesh(img, w, h){
-  const cols = CURL_COLS, rows = CURL_ROWS;
-  const mesh = document.createElement('div');
-  mesh.className = 'curl-mesh';
-  const tileW = w/cols, tileH = h/rows;
-  const tiles = [];
-  for(let r=0; r<rows; r++){
-    for(let c=0; c<cols; c++){
-      const tile = document.createElement('div');
-      tile.className = 'curl-tile';
-      tile.style.left = (c*tileW)+'px';
-      tile.style.top = (r*tileH)+'px';
-      tile.style.width = (tileW+1)+'px';
-      tile.style.height = (tileH+1)+'px';
-      // Pivot each tile around the leaf's spine (not its own center) so the
-      // whole grid arcs from one shared hinge like a real sheet of paper.
-      tile.style.transformOrigin = (-(c*tileW + tileW/2))+'px 50%';
-
-      const face = document.createElement('div');
-      face.className = 'curl-tile-face';
-      const tImg = img.cloneNode();
-      tImg.className = 'curl-tile-img';
-      tImg.style.left = (-c*tileW)+'px';
-      tImg.style.top = (-r*tileH)+'px';
-      tImg.style.width = w+'px';
-      tImg.style.height = h+'px';
-      face.appendChild(tImg);
-      const shade = document.createElement('div');
-      shade.className = 'curl-tile-shade';
-      face.appendChild(shade);
-      tile.appendChild(face);
-
-      mesh.appendChild(tile);
-      tiles.push({ el: tile, shade: shade, x: (c+0.5)/cols, y: (r+0.5)/rows });
-    }
-  }
-  return { mesh: mesh, tiles: tiles };
+function buildCurlCanvas(img, w, h){
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const canvas = document.createElement('canvas');
+  canvas.className = 'curl-canvas';
+  canvas.width = Math.max(1, Math.round(w*dpr));
+  canvas.height = Math.max(1, Math.round(h*dpr));
+  canvas.style.width = w+'px';
+  canvas.style.height = h+'px';
+  const ctx = canvas.getContext('2d');
+  return { canvas: canvas, ctx: ctx, dpr: dpr, img: img, w: w, h: h };
 }
 
-function updateCurlMesh(tiles, p){
-  for(let i=0; i<tiles.length; i++){
-    const t = tiles[i];
-    // Tiles near the spine (low x) and near the top (low y) are delayed the most,
-    // so the bottom-right corner picks up first and the curl travels diagonally.
-    const delay = (1-t.x)*CURL_DELAY_X + (1-t.y)*CURL_DELAY_Y;
-    const raw = p*(1+CURL_MAX_DELAY) - delay;
-    const lp = raw < 0 ? 0 : (raw > 1 ? 1 : raw);
-    const e = easeInOutCubic(lp);
-    const rotY = -e*178;
-    // Paper bulge: strongest mid-turn, strongest near the leading edge — the
-    // page visibly arcs up instead of staying a flat plane.
-    const bulge = Math.sin(e*Math.PI) * 44 * (0.3 + 0.7*t.x);
-    t.el.style.transform = 'rotateY('+rotY+'deg) translateZ('+bulge+'px)';
-    t.shade.style.opacity = Math.sin(e*Math.PI) * 0.5;
+// Draws the page as many thin strips blitted as continuous pixels instead of
+// discrete boxed elements. Strips are placed with a running cursor per row —
+// each one starts exactly where the previous strip's foreshortened edge
+// ended — so neighboring strips always tile with zero gaps even though they
+// individually foreshorten at different rates; that's what reads as one
+// continuously bending sheet instead of a chopped-up grid.
+function drawCurl(state, p){
+  const ctx = state.ctx, img = state.img, w = state.w, h = state.h;
+  ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  const cols = CURL_COLS, rows = CURL_ROWS;
+  const cellW = w/cols, cellH = h/rows;
+  const srcCellW = img.naturalWidth/cols, srcCellH = img.naturalHeight/rows;
+  const dw = cellW + CURL_OVERLAP, dh = cellH + CURL_OVERLAP;
+  for(let r=0; r<rows; r++){
+    const rowY = r*cellH;
+    let cursorX = 0;
+    for(let c=0; c<cols; c++){
+      const xNorm = (c+0.5)/cols, yNorm = (r+0.5)/rows;
+      // Strips near the spine (low x) and near the top (low y) are delayed the
+      // most, so the bottom-right corner picks up first and it sweeps diagonally.
+      const delay = (1-xNorm)*CURL_DELAY_X + (1-yNorm)*CURL_DELAY_Y;
+      const raw = p*(1+CURL_MAX_DELAY) - delay;
+      const lp = raw < 0 ? 0 : (raw > 1 ? 1 : raw);
+      const e = easeInOutCubic(lp);
+      const theta = e*178;
+      const cosT = Math.cos(theta*Math.PI/180);
+      const scaleX = Math.abs(cosT); // 1 -> 0 -> 1: shrinks to edge-on at 90°, then swings back out to its own footprint showing the reverse side
+      const showFront = cosT >= 0;
+
+      ctx.save();
+      ctx.translate(cursorX, rowY);
+      ctx.scale(scaleX, 1);
+      if(showFront){
+        ctx.drawImage(img, c*srcCellW, r*srcCellH, srcCellW+2, srcCellH+2, 0, 0, dw, dh);
+      } else {
+        ctx.fillStyle = '#f3ede1'; // --linen: the plain "paper back" once a strip has rotated past edge-on
+        ctx.fillRect(0, 0, dw, dh);
+      }
+      const shadowA = Math.sin(e*Math.PI) * 0.45; // darkest mid-curl, fading out flat or fully turned
+      if(shadowA > 0.01){
+        ctx.fillStyle = 'rgba(0,0,0,'+shadowA+')';
+        ctx.fillRect(0, 0, dw, dh);
+      }
+      ctx.restore();
+      cursorX += cellW*scaleX;
+    }
   }
 }
 
 function createLeafCurl(leafEl){
   const front = leafEl.querySelector('.face.front');
-  const state = { progress:0, velocity:0, mesh:null, tiles:null, ready:false, building:false, runId:0 };
+  const state = { progress:0, velocity:0, canvasState:null, ready:false, building:false, runId:0 };
 
-  async function ensureMesh(){
-    if(state.mesh || state.building) return;
+  async function ensureCanvas(){
+    if(state.canvasState || state.building) return;
     state.building = true;
     try{
       const rect = leafEl.getBoundingClientRect();
       const img = await snapshotEl(front);
       if(img){
-        const built = buildCurlMesh(img, rect.width, rect.height);
-        state.mesh = built.mesh; state.tiles = built.tiles; state.ready = true;
-        leafEl.appendChild(built.mesh);
+        state.canvasState = buildCurlCanvas(img, rect.width, rect.height);
+        state.ready = true;
+        leafEl.appendChild(state.canvasState.canvas);
       }
     } finally { state.building = false; }
   }
 
   function fallbackTurn(target){
     // Used for large multi-page jumps and if the snapshot ever fails —
-    // keeps the book working even without the mesh effect.
+    // keeps the book working even without the curl effect.
     leafEl.classList.add('fallback-turning');
     leafEl.classList.toggle('flipped', target===1);
     state.progress = target; state.velocity = 0;
@@ -799,13 +802,13 @@ function createLeafCurl(leafEl){
   async function turn(toFlipped, batch, blob){
     const target = toFlipped ? 1 : 0;
     if(batch){ fallbackTurn(target); return; }
-    if(!state.mesh) await ensureMesh();
+    if(!state.canvasState) await ensureCanvas();
     if(!state.ready){ fallbackTurn(target); return; }
 
     leafEl.classList.remove('flipped');
     leafEl.style.transform = 'rotateY(0deg)';
     front.style.visibility = 'hidden';
-    state.mesh.style.display = 'block';
+    state.canvasState.canvas.style.display = 'block';
 
     const myRun = ++state.runId;
     let last = performance.now();
@@ -819,14 +822,14 @@ function createLeafCurl(leafEl){
       state.progress += state.velocity*dt;
       const settled = Math.abs(target-state.progress) < 0.0015 && Math.abs(state.velocity) < 0.0015;
       if(settled){ state.progress = target; state.velocity = 0; }
-      updateCurlMesh(state.tiles, state.progress);
+      drawCurl(state.canvasState, state.progress);
       if(blob){
         const ep = easeInOutCubic(Math.max(0, Math.min(1, state.progress)));
         blob.style.left = (100-ep*100)+'%';
         blob.style.opacity = Math.sin(ep*Math.PI)*0.4;
       }
       if(settled){
-        state.mesh.style.display = 'none';
+        state.canvasState.canvas.style.display = 'none';
         front.style.visibility = 'visible';
         leafEl.style.transform = '';
         leafEl.classList.toggle('flipped', target===1);
@@ -838,7 +841,7 @@ function createLeafCurl(leafEl){
     requestAnimationFrame(tick);
   }
 
-  return { turn: turn, ensureMesh: ensureMesh };
+  return { turn: turn, ensureMesh: ensureCanvas };
 }
 
 function wireBook(){
