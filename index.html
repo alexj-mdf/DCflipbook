@@ -147,16 +147,16 @@ h2.title{ font-family:'Fraunces',serif; font-weight:600; font-size:28px; margin:
 .stream .n{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--brass); letter-spacing:.15em; }
 .stream .t{ font-family:'Fraunces',serif; font-weight:600; font-size:15px; margin:4px 0; }
 .stream .d{ font-size:11.5px; color:var(--ink-soft); line-height:1.5; }
-.quotebox{ border:1px solid var(--line); border-radius:4px; overflow:hidden; }
+.quotebox{ border:1px solid var(--line); border-radius:4px; overflow:hidden; flex-shrink:0; }
 table{ width:100%; border-collapse:collapse; font-size:12.5px; }
 thead th{ text-align:left; font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); background:var(--linen); padding:8px 11px; border-bottom:1px solid var(--line); }
 tbody td{ padding:9px 11px; border-bottom:1px solid var(--line); color:var(--ink); }
 tbody tr:last-child td{ border-bottom:none; }
 td.num, th.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
-.totals{ margin-top:12px; align-self:flex-end; width:220px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; }
+.totals{ margin-top:12px; align-self:flex-end; width:220px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; flex-shrink:0; }
 .totals div{ display:flex; justify-content:space-between; padding:4px 0; color:var(--ink-soft); }
 .totals .grand{ color:var(--ink); font-weight:600; border-top:1px solid var(--line); margin-top:3px; padding-top:8px; font-size:14.5px; }
-.note{ margin-top:14px; font-size:11px; color:var(--ink-soft); font-style:italic; white-space:pre-wrap; }
+.note{ margin-top:14px; font-size:11px; color:var(--ink-soft); font-style:italic; white-space:pre-wrap; flex-shrink:0; }
 .swatches{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:4px; }
 .swatch{ border-radius:4px; overflow:hidden; border:1px solid var(--line); background:#fff; }
 .swatch .tile{ height:64px; }
@@ -178,6 +178,10 @@ td.num, th.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
 .contact{ margin-top:auto; padding-top:14px; border-top:1px solid var(--line); font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); line-height:1.85; }
 .contact b{ color:var(--ink); font-weight:500; }
 .decision{ justify-content:center; align-items:center; text-align:center; }
+/* StPageFlip forces inline display:block on the page element mid-flip, which defeats the
+   .decision flex-centering above (justify/align-items only work on a flex container). Centering
+   is done instead on this absolutely-positioned inner wrapper, which stays flex regardless. */
+.decision-inner{ position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:26px 22px 22px 32px; box-sizing:border-box; }
 .decision h2.title{ margin-bottom:8px; }
 .decision p.lead{ font-size:13.5px; color:var(--ink-soft); max-width:44ch; margin:0 0 24px; }
 .decision-btns{ display:flex; gap:12px; }
@@ -195,7 +199,7 @@ td.num, th.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
 .decided-state.declined .badge{ background:#f0dcd9; color:var(--bad); }
 .decided-msg{ font-size:13px; max-width:38ch; }
 
-/* ===== dark content pages: Quote / Gallery / Service / Decision ===== */
+/* ===== dark content pages: Quote / Service / Decision ===== */
 .dark-page{ background:#272727; border-color:#3d3d3d; color:var(--linen); }
 .dark-page::before{ background:linear-gradient(to right, rgba(0,0,0,.35), transparent); }
 .dark-page .eyebrow{ font-family:'Poppins',sans-serif; font-weight:500; letter-spacing:.16em; color:var(--brass); }
@@ -230,6 +234,17 @@ td.num, th.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
 .service .svc-col li{ font-size:11px; line-height:1.5; padding-left:12px; margin-bottom:1px; }
 .service .contact{ padding-top:10px; font-size:9.5px; line-height:1.55; }
 .service h2.title{ margin:0 0 10px; }
+
+/* tightened spacing so long itemised breakdowns (8-10+ rows) keep totals visible;
+   .page already has overflow:hidden auto as a scroll fallback beyond that */
+.quote h2.title{ margin:0 0 10px; font-size:24px; }
+.quote table{ font-size:11.5px; }
+.quote thead th{ padding:6px 9px; font-size:9px; }
+.quote tbody td{ padding:6px 9px; }
+.quote .totals{ margin-top:8px; font-size:11.5px; }
+.quote .totals div{ padding:3px 0; }
+.quote .totals .grand{ margin-top:2px; padding-top:6px; font-size:13px; }
+.quote .note{ margin-top:8px; font-size:10px; }
 .controls{ display:flex; align-items:center; gap:16px; }
 .nav-btn{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; background:transparent; color:var(--linen); border:1px solid #5a4433; padding:8px 15px; border-radius:3px; cursor:pointer; }
 .nav-btn:hover:not(:disabled){ background:var(--brass); color:#241a14; border-color:var(--brass); }
@@ -248,9 +263,16 @@ td.num, th.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
   .row2{ flex-direction:column; }
   .li-row{ grid-template-columns:1fr; }
   .page{ padding:28px 24px 28px 38px; }
+  .decision-inner{ padding:28px 24px 28px 38px; }
   .cover{ padding-left:38px; }
   .streams, .svc-grid{ flex-direction:column; }
   .swatches{ grid-template-columns:repeat(2,1fr); }
+  .quote{ padding-top:18px; padding-bottom:14px; }
+  .quote h2.title{ font-size:20px; margin-bottom:8px; }
+  .quote thead th{ padding:4px 7px; }
+  .quote tbody td{ padding:4px 7px; font-size:11px; }
+  .quote .totals{ margin-top:6px; }
+  .quote .note{ margin-top:6px; font-size:9px; }
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
@@ -464,7 +486,7 @@ function renderEditor(){
     const lt = qty ? qty*price : price;
     return `<div class="li-row" data-i="${i}">
       <input class="li-product" placeholder="Product / SKU" value="${escapeHtml(li.product)}">
-      <input class="li-qty" placeholder="m² (blank=flat)" value="${escapeHtml(li.qty)}">
+      <input class="li-qty" placeholder="Qty (blank=flat)" value="${escapeHtml(li.qty)}">
       <input class="li-price" placeholder="Unit £" value="${escapeHtml(li.unitPrice)}">
       <div class="li-total">${money(lt)}</div>
       <button class="rm-btn" data-rm="${i}" title="Remove">×</button>
@@ -586,7 +608,7 @@ document.getElementById('filterTo').addEventListener('change', e=>{ filterTo = e
 document.getElementById('showHiddenChk').addEventListener('change', e=>{ showHidden = e.target.checked; renderList(); });
 
 /* ---------------- CUSTOMER render ---------------- */
-const PAGE_TABS = ['Cover','About','Quote','Gallery','Service','Decision'];
+const PAGE_TABS = ['Cover','About','Quote','Service','Decision'];
 
 async function renderCustomer(routeInfo){
   const stage = document.getElementById('custStage');
@@ -601,10 +623,6 @@ async function renderCustomer(routeInfo){
     const lt = qty ? qty*price : price;
     return `<tr><td>${escapeHtml(li.product)}</td><td class="num">${li.qty?escapeHtml(li.qty):'—'}</td><td class="num">${money(price)}</td><td class="num">${money(lt)}</td></tr>`;
   }).join('') || '<tr><td colspan="4" style="color:var(--ink-soft);">Line items to follow.</td></tr>';
-
-  const galItems = q.gallery.filter(g=>g.name).map(g=>
-    `<div class="swatch"><div class="tile ${g.tex}"></div><div class="cap"><div class="p">${escapeHtml(g.name)}</div><div class="s">${escapeHtml(g.ref)}</div></div></div>`
-  ).join('') || '<div style="color:var(--ink-soft); font-size:13px;">Samples to follow.</div>';
 
   stage.innerHTML = `
     <div class="book-wrap">
@@ -631,15 +649,10 @@ async function renderCustomer(routeInfo){
 
         <div class="page quote dark-page" data-density="hard">
           <div class="eyebrow">Your Quote</div><h2 class="title">Itemised breakdown</h2>
-          <div class="quotebox"><table><thead><tr><th>Product</th><th class="num">m²</th><th class="num">Unit Price</th><th class="num">Total</th></tr></thead><tbody>${liRows}</tbody></table></div>
+          <div class="quotebox"><table><thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Unit Price</th><th class="num">Total</th></tr></thead><tbody>${liRows}</tbody></table></div>
           <div class="totals"><div><span>Subtotal</span><span>${money(subtotal)}</span></div><div><span>VAT (20%)</span><span>${money(vat)}</span></div><div class="grand"><span>Total</span><span>${money(total)}</span></div></div>
           <div class="note">${escapeHtml(q.notes)}</div>
         <div class="pageno">04</div></div>
-
-        <div class="page gallery dark-page" data-density="hard">
-          <div class="eyebrow">Selection</div><h2 class="title">Samples for this quote</h2>
-          <div class="swatches">${galItems}</div>
-        <div class="pageno">05</div></div>
 
         <div class="page service dark-page" data-density="hard">
           <div class="eyebrow">Service</div><h2 class="title">What's included &amp; next steps</h2>
@@ -648,7 +661,7 @@ async function renderCustomer(routeInfo){
             <div class="svc-col"><h3>Next steps</h3><ul><li>Confirm your order</li><li>Book your fitting date</li><li>Site measure if required</li><li>Installation day</li></ul></div>
           </div>
           <div class="contact"><b>DC Flooring</b> — [Address line, placeholder]<br>[Phone number] · [Email address] · [Website]</div>
-        <div class="pageno">06</div></div>
+        <div class="pageno">05</div></div>
 
         <div class="page decision dark-page" id="decisionPage" data-density="hard"></div>
       </div>
@@ -670,25 +683,27 @@ function renderDecisionPage(q){
   const el = document.getElementById('decisionPage');
   if(q.response){
     const cls = q.response.decision;
-    el.innerHTML = `<div class="decided-state ${cls}">
+    el.innerHTML = `<div class="decision-inner"><div class="decided-state ${cls}">
       <div class="badge">${cls==='accepted'?'Quote accepted':'Quote declined'}</div>
       <div class="decided-msg">
         ${cls==='accepted' ? "Thanks — we've got your confirmation. We'll be in touch to get things booked in." : "Thanks for letting us know."}
         ${q.response.reason ? `<div style="margin-top:10px; font-style:italic;">"${escapeHtml(q.response.reason)}"</div>` : ''}
       </div>
-    </div>`;
+    </div></div>`;
     return;
   }
   el.innerHTML = `
-    <h2 class="title">What would you like to do?</h2>
-    <p class="lead">Happy with the quote? Confirm below and we'll get your fitting booked in. If it's not quite right, let us know why.</p>
-    <div class="decision-btns">
-      <button class="dbtn accept" id="acceptBtn">Accept quote</button>
-      <button class="dbtn decline" id="declineBtn">Decline</button>
-    </div>
-    <div class="decline-form" id="declineForm" style="display:none;">
-      <textarea id="declineReason" placeholder="Tell us why — price, timing, changed your mind about the product..."></textarea>
-      <button class="btn btn-primary">Submit</button>
+    <div class="decision-inner">
+      <h2 class="title">What would you like to do?</h2>
+      <p class="lead">Happy with the quote? Confirm below and we'll get your fitting booked in. If it's not quite right, let us know why.</p>
+      <div class="decision-btns">
+        <button class="dbtn accept" id="acceptBtn">Accept quote</button>
+        <button class="dbtn decline" id="declineBtn">Decline</button>
+      </div>
+      <div class="decline-form" id="declineForm" style="display:none;">
+        <textarea id="declineReason" placeholder="Tell us why — price, timing, changed your mind about the product..."></textarea>
+        <button class="btn btn-primary">Submit</button>
+      </div>
     </div>
   `;
   document.getElementById('acceptBtn').addEventListener('click', ()=> submitDecision(q, 'accepted', ''));
