@@ -62,7 +62,26 @@ h1,h2,h3{ font-family:'Fraunces',serif; font-weight:600; margin:0; }
   background:none; border:1px solid var(--line); color:var(--ink-soft); padding:2px 7px; border-radius:10px; cursor:pointer;
 }
 .hide-btn:hover{ border-color:var(--brass); color:var(--brass); }
+.del-btn{
+  font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase;
+  background:none; border:1px solid var(--line); color:var(--bad); padding:2px 7px; border-radius:10px; cursor:pointer;
+}
+.del-btn:hover{ border-color:var(--bad); background:var(--bad); color:#fff; }
+.qcard-check{ display:flex; align-items:center; cursor:pointer; margin-right:2px; }
+.qcard-check input{ cursor:pointer; }
 .empty-list{ font-size:12.5px; color:var(--ink-soft); text-align:center; padding:24px 8px; }
+
+.select-all-row{ margin:-6px 0 10px; }
+.bulk-bar{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  background:#f7ece9; border:1px solid #edd0ca; border-radius:5px; padding:9px 11px; margin-bottom:12px;
+  font-size:12px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace;
+}
+.bulk-del-btn{
+  font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.05em; text-transform:uppercase;
+  background:var(--bad); color:#fff; border:none; padding:6px 11px; border-radius:4px; cursor:pointer;
+}
+.bulk-del-btn:hover{ background:#8a3a32; }
 
 .list-filters{ margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--line); }
 .date-filter{ display:flex; align-items:center; gap:6px; margin-bottom:8px; }
@@ -296,6 +315,13 @@ td.num, th.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
         </div>
         <label class="hidden-toggle"><input type="checkbox" id="showHiddenChk"> Show hidden</label>
       </div>
+      <div class="select-all-row">
+        <label class="hidden-toggle"><input type="checkbox" id="selectAllChk"> Select all</label>
+      </div>
+      <div class="bulk-bar" id="bulkBar" style="display:none;">
+        <span><span id="bulkCount">0</span> selected</span>
+        <button class="bulk-del-btn" id="bulkDeleteBtn">Delete selected</button>
+      </div>
       <div id="qList"></div>
     </div>
     <div class="editor-pane" id="editorPane"></div>
@@ -384,6 +410,19 @@ async function listQuotes(){
     return rows.map(fromDbRow);
   }catch(e){ return []; }
 }
+async function deleteQuoteRow(ref){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/quotes?ref=eq.${encodeURIComponent(ref)}`, { method:'DELETE', headers: SB_HEADERS });
+    return res.ok;
+  }catch(e){ return false; }
+}
+async function deleteQuoteRows(refs){
+  try{
+    const list = refs.map(r=>encodeURIComponent(r)).join(',');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/quotes?ref=in.(${list})`, { method:'DELETE', headers: SB_HEADERS });
+    return res.ok;
+  }catch(e){ return false; }
+}
 async function nextRef(){
   return 'DCF-' + Date.now().toString().slice(-6);
 }
@@ -422,14 +461,32 @@ let draft = null;
 let filterFrom = '';
 let filterTo = '';
 let showHidden = false;
+let selectedRefs = new Set();
 
 async function renderList(){
   let quotes = await listQuotes();
   if(!showHidden) quotes = quotes.filter(q=> !q.hidden);
   if(filterFrom) quotes = quotes.filter(q=> q.date && q.date >= filterFrom);
   if(filterTo) quotes = quotes.filter(q=> q.date && q.date <= filterTo);
+  // drop selections for refs no longer in the visible (filtered) list
+  const visibleRefs = new Set(quotes.map(q=>q.ref));
+  Array.from(selectedRefs).forEach(r=>{ if(!visibleRefs.has(r)) selectedRefs.delete(r); });
+
+  const bulkBar = document.getElementById('bulkBar');
+  const selectAllChk = document.getElementById('selectAllChk');
+  if(!quotes.length){
+    document.getElementById('qList').innerHTML = '<div class="empty-list">No quotes match — create one or adjust your filters.</div>';
+    bulkBar.style.display = 'none';
+    selectAllChk.checked = false; selectAllChk.indeterminate = false;
+    return;
+  }
+
+  bulkBar.style.display = selectedRefs.size ? 'flex' : 'none';
+  document.getElementById('bulkCount').textContent = selectedRefs.size;
+  selectAllChk.checked = selectedRefs.size === quotes.length;
+  selectAllChk.indeterminate = selectedRefs.size > 0 && selectedRefs.size < quotes.length;
+
   const el = document.getElementById('qList');
-  if(!quotes.length){ el.innerHTML = '<div class="empty-list">No quotes match — create one or adjust your filters.</div>'; return; }
   el.innerHTML = quotes.map(q=>{
     const {total} = calcTotals(q);
     let reasonHtml = '';
@@ -438,10 +495,16 @@ async function renderList(){
     }
     return `<div class="qcard ${q.ref===currentRef?'active':''} ${q.hidden?'is-hidden':''}" data-ref="${q.ref}">
       <div class="row1">
-        <span class="ref">${q.ref}</span>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <label class="qcard-check" onclick="event.stopPropagation()">
+            <input type="checkbox" class="sel-chk" data-ref="${q.ref}" ${selectedRefs.has(q.ref)?'checked':''}>
+          </label>
+          <span class="ref">${q.ref}</span>
+        </div>
         <div style="display:flex; gap:6px; align-items:center;">
           <span class="pill ${q.status}">${q.status}</span>
           <button class="hide-btn" data-ref="${q.ref}" data-hidden="${q.hidden?1:0}">${q.hidden?'Unhide':'Hide'}</button>
+          <button class="del-btn" data-ref="${q.ref}" title="Delete permanently">Delete</button>
         </div>
       </div>
       <div class="name">${escapeHtml(q.customerName)||'Unnamed customer'}</div>
@@ -451,6 +514,14 @@ async function renderList(){
   }).join('');
   Array.from(el.querySelectorAll('.qcard')).forEach(c=>{
     c.addEventListener('click', ()=> openEditor(c.dataset.ref));
+  });
+  Array.from(el.querySelectorAll('.sel-chk')).forEach(chk=>{
+    chk.addEventListener('click', e=> e.stopPropagation());
+    chk.addEventListener('change', e=>{
+      const ref = chk.dataset.ref;
+      if(chk.checked) selectedRefs.add(ref); else selectedRefs.delete(ref);
+      renderList();
+    });
   });
   Array.from(el.querySelectorAll('.hide-btn')).forEach(btn=>{
     btn.addEventListener('click', async (e)=>{
@@ -463,6 +534,22 @@ async function renderList(){
       await saveQuote(q);
       if(draft && draft.ref===ref) draft.hidden = q.hidden;
       renderList();
+    });
+  });
+  Array.from(el.querySelectorAll('.del-btn')).forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      const ref = btn.dataset.ref;
+      if(!confirm(`Delete quote ${ref}? This can't be undone.`)) return;
+      const ok = await deleteQuoteRow(ref);
+      if(!ok){ alert('Could not delete — please try again.'); return; }
+      selectedRefs.delete(ref);
+      if(draft && draft.ref===ref){
+        draft = null; currentRef = null;
+        await route();
+      } else {
+        renderList();
+      }
     });
   });
 }
@@ -606,6 +693,26 @@ document.getElementById('newQuoteBtn').addEventListener('click', async ()=>{
 document.getElementById('filterFrom').addEventListener('change', e=>{ filterFrom = e.target.value; renderList(); });
 document.getElementById('filterTo').addEventListener('change', e=>{ filterTo = e.target.value; renderList(); });
 document.getElementById('showHiddenChk').addEventListener('change', e=>{ showHidden = e.target.checked; renderList(); });
+
+document.getElementById('selectAllChk').addEventListener('change', async e=>{
+  let quotes = await listQuotes();
+  if(!showHidden) quotes = quotes.filter(q=> !q.hidden);
+  if(filterFrom) quotes = quotes.filter(q=> q.date && q.date >= filterFrom);
+  if(filterTo) quotes = quotes.filter(q=> q.date && q.date <= filterTo);
+  if(e.target.checked){ quotes.forEach(q=> selectedRefs.add(q.ref)); }
+  else { selectedRefs.clear(); }
+  renderList();
+});
+document.getElementById('bulkDeleteBtn').addEventListener('click', async ()=>{
+  const refs = Array.from(selectedRefs);
+  if(!refs.length) return;
+  if(!confirm(`Delete ${refs.length} quote${refs.length===1?'':'s'}? This can't be undone.`)) return;
+  const ok = await deleteQuoteRows(refs);
+  if(!ok){ alert('Could not delete — please try again.'); return; }
+  if(draft && refs.includes(draft.ref)){ draft = null; currentRef = null; }
+  selectedRefs.clear();
+  if(!draft) await route(); else renderList();
+});
 
 /* ---------------- CUSTOMER render ---------------- */
 const PAGE_TABS = ['Cover','About','Quote','Service','Decision'];
@@ -800,6 +907,24 @@ async function route(){
 }
 window.addEventListener('hashchange', route);
 route();
+
+// StPageFlip's loadFromHTML() clones the page content into its own managed DOM structure
+// for the flip animation, and clones don't carry over JS event listeners — so a listener
+// attached directly to the decline-reason textarea when it's first rendered (before
+// wireBook() runs and clones it) never survives onto the copy that actually ends up on
+// screen. StPageFlip also attaches its own (non-capturing) mousedown/touchstart handler on
+// an ancestor of the page content to detect swipe drags, and calls preventDefault() on it,
+// which blocks the browser's native focus-on-click for any form element underneath — so
+// the textarea silently never receives focus and typed keystrokes go nowhere. Fixed with a
+// single capturing-phase listener on `document`: capture always runs before an ancestor's
+// bubble-phase listener gets a chance, and delegation via `document` doesn't depend on the
+// specific (possibly-cloned) textarea node, so it works regardless of when/how the flipbook
+// rebuilds the page DOM.
+['mousedown','touchstart'].forEach(evt=>{
+  document.addEventListener(evt, e=>{
+    if(e.target && e.target.id === 'declineReason') e.stopPropagation();
+  }, true);
+});
 </script>
 </body>
 </html>
